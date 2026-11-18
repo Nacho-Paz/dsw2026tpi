@@ -4,9 +4,14 @@ import Button from '../../shared/components/Button';
 
 function SpecialtiesPage() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
 
-  const specialtiesList = [
-    {
+    
+
+   const [specialtiesList, setSpecialtiesList] = useState([
+     {
       id: 1,
       name: 'Cardiología',
       description:
@@ -93,7 +98,31 @@ function SpecialtiesPage() {
         </svg>
       ),
     },
-  ];
+  ]);
+
+
+  
+  const handleCreateSpecialty = (e) => {
+  e.preventDefault();
+
+  if (!name.trim() || !description.trim()) {
+    alert('Completá todos los campos');
+    return;
+  }
+
+  const newSpecialty = {
+    id: Date.now(),
+    name: name,
+    description: description,
+    status: 'Active',
+  };
+
+  setSpecialtiesList([...specialtiesList, newSpecialty]);
+
+  setName('');
+  setDescription('');
+  setShowForm(false);
+};
 
   const filteredSpecialties = specialtiesList.filter(
     (item) =>
@@ -144,7 +173,7 @@ function SpecialtiesPage() {
 
           {/* Botón Nueva Especialidad */}
           <Button
-            onClick={() => alert('Abrir modal para crear nueva especialidad')}
+            onClick={() => setShowForm(true)}
             className="flex items-center gap-1.5 bg-med-primary-900 hover:bg-med-primary-800 text-white font-medium"
           >
             <span>+</span>
