@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react';
 import Card from '../../shared/components/Card';
 import Button from '../../shared/components/Button';
+import { deleteDoctor, getDoctors } from '../services/doctorService';
+
+const MIN_SEARCH_LENGTH = 3;
+const MAX_SEARCH_LENGTH = 100;
+const SEARCH_DELAY_MS = 400;
 
 function DoctorsPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -14,6 +19,38 @@ function DoctorsPage() {
   const trimmed = searchTerm.trim();
   const query = trimmed.length >= MIN_SEARCH_LENGTH ? trimmed : '';
   const searchTooShort = trimmed.length > 0 && !query;  
+
+  useEffect(() => {
+  let ignore = false;
+
+  const timer = setTimeout(
+    async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const result = await getDoctors(query);
+        if (ignore) return;
+        setDoctors(result.data);
+        setTotal(result.total);
+      } catch (err) {
+        if (!ignore) {
+          setError(
+            err.response?.data?.message ??
+              'No se pudo cargar el listado. Verificá la conexión e intentá de nuevo.'
+          );
+        }
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    },
+    query ? SEARCH_DELAY_MS : 0
+  );
+
+  return () => {
+    ignore = true;
+    clearTimeout(timer);
+  };
+}, [query, reloadKey]);
 
   return (
     <div className="flex flex-col gap-6">
