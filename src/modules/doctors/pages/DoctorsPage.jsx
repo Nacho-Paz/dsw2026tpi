@@ -52,6 +52,20 @@ function DoctorsPage() {
   };
 }, [query, reloadKey]);
 
+async function handleDelete(doctor) {
+  if (!window.confirm(`¿Eliminar a ${doctor.name}?`)) return;
+
+  try {
+    await deleteDoctor(doctor.id);
+    setReloadKey((key) => key + 1);
+  } catch (err) {
+    setError(
+      err.response?.data?.message ??
+        'No se pudo eliminar el doctor. Intentá de nuevo.'
+    );
+  }
+}
+
   return (
     <div className="flex flex-col gap-6">
       {/* Título y Acciones de Cabecera */}
@@ -248,7 +262,7 @@ function DoctorsPage() {
                         title="Eliminar profesional"
                         className="p-1.5 rounded-lg hover:bg-red-50 text-med-danger-text transition"
                         onClick={() =>
-                          alert(`Eliminar profesional ${doc.name}`)
+                          handleDelete(doc)
                         }
                       >
                         <svg
