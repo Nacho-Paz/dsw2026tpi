@@ -182,6 +182,73 @@ function SpecialtiesPage() {
         </div>
       </div>
 
+
+      {/* Formulario para crear una especialidad */}
+      {showForm && (
+        <Card className="p-5 border-med-border">
+          <h2 className="text-lg font-bold text-med-primary-900 mb-4">
+            Nueva Especialidad
+          </h2>
+
+          <form
+            onSubmit={handleCreateSpecialty}
+            className="flex flex-col gap-4"
+          >
+            <div>
+              <label className="block text-sm font-medium text-med-text-main mb-1">
+                Nombre de la especialidad
+              </label>
+
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ej: Oftalmología"
+                required
+                className="w-full border border-med-border rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-med-primary-600"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-med-text-main mb-1">
+                Descripción
+              </label>
+
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Ingresá una descripción"
+                rows="3"
+                required
+                className="w-full border border-med-border rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-med-primary-600"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowForm(false);
+                  setName('');
+                  setDescription('');
+                }}
+                className="px-4 py-2 rounded-lg border border-med-border text-med-text-sub hover:bg-gray-100"
+              >
+                Cancelar
+              </button>
+
+              <Button
+                type="submit"
+                className="bg-med-primary-900 hover:bg-med-primary-800 text-white"
+              >
+                Guardar especialidad
+              </Button>
+            </div>
+          </form>
+        </Card>
+      )}
+
+
       {/* Tabla Principal de Especialidades */}
       <Card className="p-0 overflow-hidden border-med-border">
         <div className="p-5 border-b border-med-border">
