@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Card from '../../shared/components/Card';
 import Button from '../../shared/components/Button';
 import { deleteDoctor, getDoctors } from '../services/doctorService';
@@ -7,8 +8,21 @@ const MIN_SEARCH_LENGTH = 3;
 const MAX_SEARCH_LENGTH = 100;
 const SEARCH_DELAY_MS = 400;
 
+const getInitials = (name) =>
+  name
+    .replace(/^dra?\.\s*/i, '')
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word[0])
+    .join('')
+    .toUpperCase();
+
+  
 function DoctorsPage() {
   const [searchTerm, setSearchTerm] = useState('');
+  
+  const navigate = useNavigate();
 
   const [doctors, setDoctors] = useState([]);
   const [total, setTotal] = useState(0);
@@ -107,7 +121,7 @@ async function handleDelete(doctor) {
           </div>
 
           <Button
-            onClick={() => alert('Abrir modal de disponibilidad horaria')}
+            onClick={() => navigate('/admin/availability')}
             className="flex items-center gap-2 bg-med-primary-900 hover:bg-med-primary-800 text-white"
           >
             <svg
@@ -127,7 +141,7 @@ async function handleDelete(doctor) {
           </Button>
 
           <Button
-            onClick={() => alert('Abrir modal de nuevo doctor')}
+            onClick={() => navigate('/admin/doctors/new')}
             className="flex items-center gap-1.5 bg-med-primary-700 hover:bg-med-primary-800 text-white"
           >
             <span>+</span>
@@ -215,7 +229,7 @@ async function handleDelete(doctor) {
                       <button
                         title="Ver detalle"
                         className="p-1.5 rounded-lg hover:bg-med-primary-50 text-med-primary-600 hover:text-med-primary-900 transition"
-                        onClick={() => alert(`Ver detalle de ${doc.name}`)}
+                        onClick={() => navigate(`/admin/availability?doctorId=${doc.id}`)}
                       >
                         <svg
                           className="w-4 h-4"
@@ -241,7 +255,7 @@ async function handleDelete(doctor) {
                       <button
                         title="Editar profesional"
                         className="p-1.5 rounded-lg hover:bg-med-primary-50 text-med-primary-600 hover:text-med-primary-900 transition"
-                        onClick={() => alert(`Editar profesional ${doc.name}`)}
+                        onClick={() => navigate(`/admin/doctors/${doc.id}/edit`)}
                       >
                         <svg
                           className="w-4 h-4"
