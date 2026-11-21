@@ -224,7 +224,12 @@ const handleDeleteSpecialty = (id) => {
 
           {/* Botón Nueva Especialidad */}
           <Button
-            onClick={() => setShowForm(true)}
+           onClick={() => {
+           setEditingId(null);
+           setName('');
+           setDescription('');
+           setShowForm(true);
+          }}
             className="flex items-center gap-1.5 bg-med-primary-900 hover:bg-med-primary-800 text-white font-medium"
           >
             <span>+</span>
@@ -278,11 +283,12 @@ const handleDeleteSpecialty = (id) => {
             <div className="flex justify-end gap-2">
               <button
                 type="button"
-                onClick={() => {
-                  setShowForm(false);
-                  setName('');
-                  setDescription('');
-                }}
+               onClick={() => {
+               setShowForm(false);
+               setEditingId(null);
+               setName('');
+               setDescription('');
+              }}
                 className="px-4 py-2 rounded-lg border border-med-border text-med-text-sub hover:bg-gray-100"
               >
                 Cancelar
