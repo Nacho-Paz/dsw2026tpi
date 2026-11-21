@@ -8,6 +8,109 @@ const MIN_SEARCH_LENGTH = 3;
 const MAX_SEARCH_LENGTH = 100;
 const SEARCH_DELAY_MS = 400;
 
+
+function SearchIcon() {
+  return (
+    <svg
+      className="w-4 h-4"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+      />
+    </svg>
+  );
+}
+
+function ClockIcon() {
+  return (
+    <svg
+      className="w-4 h-4"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </svg>
+  );
+}
+
+function EyeIcon() {
+  return (
+    <svg
+      className="w-4 h-4"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+      />
+    </svg>
+  );
+}
+
+function PencilIcon() {
+  return (
+    <svg
+      className="w-4 h-4"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+      />
+    </svg>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg
+      className="w-4 h-4"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+      />
+    </svg>
+  );
+}
+
+
 const getInitials = (name) =>
   name
     .replace(/^dra?\.\s*/i, '')
@@ -21,7 +124,7 @@ const getInitials = (name) =>
   
 function DoctorsPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  
+
   const navigate = useNavigate();
 
   const [doctors, setDoctors] = useState([]);
@@ -97,46 +200,32 @@ async function handleDelete(doctor) {
           {/* Barra de Búsqueda */}
           <div className="relative min-w-[240px] flex-1 sm:flex-initial">
             <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-med-text-muted">
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-            </span>
+                <SearchIcon />
+              </span>
+
             <input
               type="text"
               placeholder="Buscar doctor por nombre..."
+              aria-label="Buscar doctor por nombre"
+              maxLength={MAX_SEARCH_LENGTH}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-med-border rounded-lg text-med-text-main placeholder-med-text-muted focus:outline-none focus:ring-1 focus:ring-med-primary-600"
             />
           </div>
 
+          {searchTooShort && (
+              <p className="mt-1 text-xs text-med-text-muted">
+                Escribí al menos {MIN_SEARCH_LENGTH} letras para filtrar.
+              </p>
+            )}
+          </div>
+
           <Button
             onClick={() => navigate('/admin/availability')}
             className="flex items-center gap-2 bg-med-primary-900 hover:bg-med-primary-800 text-white"
           >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
+            <ClockIcon />
             <span>Agregar Disponibilidad Horaria</span>
           </Button>
 
@@ -149,6 +238,15 @@ async function handleDelete(doctor) {
           </Button>
         </div>
       </div>
+
+       {error && (
+        <p
+          role="alert"
+          className="px-4 py-3 rounded-lg text-sm bg-med-danger-bg text-med-danger-text"
+        >
+          {error}
+        </p>
+      )}
 
       {/* Tabla Principal */}
       <Card className="p-0 overflow-hidden border-med-border">
@@ -231,25 +329,7 @@ async function handleDelete(doctor) {
                         className="p-1.5 rounded-lg hover:bg-med-primary-50 text-med-primary-600 hover:text-med-primary-900 transition"
                         onClick={() => navigate(`/admin/availability?doctorId=${doc.id}`)}
                       >
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                          />
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                          />
-                        </svg>
+                        <EyeIcon />
                       </button>
 
                       <button
@@ -257,19 +337,7 @@ async function handleDelete(doctor) {
                         className="p-1.5 rounded-lg hover:bg-med-primary-50 text-med-primary-600 hover:text-med-primary-900 transition"
                         onClick={() => navigate(`/admin/doctors/${doc.id}/edit`)}
                       >
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                          />
-                        </svg>
+                        <PencilIcon />
                       </button>
 
                       <button
@@ -279,19 +347,7 @@ async function handleDelete(doctor) {
                           handleDelete(doc)
                         }
                       >
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                          />
-                        </svg>
+                        <TrashIcon />
                       </button>
                     </div>
                   </td>
@@ -302,16 +358,12 @@ async function handleDelete(doctor) {
         </div>
 
         {/* Paginador normalizado idéntico a Búsqueda y Filtrado de Citas */}
-        <div className="p-4 bg-med-primary-50/50 border-t border-med-border flex items-center justify-between text-xs text-med-text-muted">
-          <span>Mostrando 4 de 124 registros</span>
-          <div className="flex items-center gap-1">
-            <button className="px-2.5 py-1 border border-med-border rounded bg-white text-med-text-sub hover:bg-gray-50">
-              ‹
-            </button>
-            <button className="px-2.5 py-1 border border-med-border rounded bg-white text-med-text-sub hover:bg-gray-50">
-              ›
-            </button>
+        {!loading && !error && (
+          <div className="p-4 bg-med-primary-50/50 border-t border-med-border text-xs text-med-text-muted">
+            Mostrando {doctors.length} de {total} registros
           </div>
+        )}
+
         </div>
       </Card>
     </div>
