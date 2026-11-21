@@ -67,7 +67,7 @@ function DoctorRow({ doctor, onDelete }) {
 
       <td className="px-6 py-4">
         <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-med-primary-100 text-med-primary-700">
-          {doctor.specialty}
+          {doctor.specialty?.name}
         </span>
       </td>
 
