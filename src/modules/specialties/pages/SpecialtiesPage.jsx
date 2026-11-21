@@ -238,7 +238,7 @@ const handleDeleteSpecialty = (id) => {
       {showForm && (
         <Card className="p-5 border-med-border">
           <h2 className="text-lg font-bold text-med-primary-900 mb-4">
-            Nueva Especialidad
+             {editingId !== null ? 'Editar Especialidad' : 'Nueva Especialidad'}
           </h2>
 
           <form
@@ -292,8 +292,7 @@ const handleDeleteSpecialty = (id) => {
                 type="submit"
                 className="bg-med-primary-900 hover:bg-med-primary-800 text-white"
               >
-                Guardar especialidad
-              </Button>
+                {editingId !== null ? 'Guardar cambios' : 'Guardar especialidad'}              </Button>
             </div>
           </form>
         </Card>
@@ -359,10 +358,7 @@ const handleDeleteSpecialty = (id) => {
                       <button
                         title="Editar especialidad"
                         className="p-1.5 rounded-lg hover:bg-med-primary-50 text-med-text-muted hover:text-med-primary-900 transition"
-                        onClick={() =>
-                          alert(`Editar especialidad ${spec.name}`)
-                        }
-                      >
+                        onClick={() => handleEditSpecialty(spec)}                      >
                         <svg
                           className="w-4 h-4"
                           fill="none"
@@ -381,10 +377,7 @@ const handleDeleteSpecialty = (id) => {
                       <button
                         title="Eliminar especialidad"
                         className="p-1.5 rounded-lg hover:bg-red-50 text-med-danger-text transition"
-                        onClick={() =>
-                          alert(`Eliminar especialidad ${spec.name}`)
-                        }
-                      >
+                        onClick={() => handleDeleteSpecialty(spec.id)}>
                         <svg
                           className="w-4 h-4"
                           fill="none"
