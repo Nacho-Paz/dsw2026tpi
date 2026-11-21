@@ -7,6 +7,7 @@ function SpecialtiesPage() {
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [editingId, setEditingId] = useState(null);
 
     
 
@@ -101,8 +102,8 @@ function SpecialtiesPage() {
   ]);
 
 
-  
-  const handleCreateSpecialty = (e) => {
+ 
+const handleCreateSpecialty = (e) => {
   e.preventDefault();
 
   if (!name.trim() || !description.trim()) {
@@ -110,18 +111,68 @@ function SpecialtiesPage() {
     return;
   }
 
-  const newSpecialty = {
-    id: Date.now(),
-    name: name,
-    description: description,
-    status: 'Active',
-  };
+  if (editingId !== null) {
+    // Estamos editando una especialidad existente
+    setSpecialtiesList((currentList) =>
+      currentList.map((spec) =>
+        spec.id === editingId
+          ? {
+              ...spec,
+              name: name.trim(),
+              description: description.trim(),
+            }
+          : spec
+      )
+    );
+  } else {
+    // Estamos creando una especialidad nueva
+    const newSpecialty = {
+      id: Date.now(),
+      name: name.trim(),
+      description: description.trim(),
+      status: 'Active',
+    };
 
-  setSpecialtiesList([...specialtiesList, newSpecialty]);
+    setSpecialtiesList((currentList) => [
+      ...currentList,
+      newSpecialty,
+    ]);
+  }
 
+  // Limpiamos el formulario
   setName('');
   setDescription('');
+  setEditingId(null);
   setShowForm(false);
+};
+
+const handleEditSpecialty = (spec) => {
+  setEditingId(spec.id);
+  setName(spec.name);
+  setDescription(spec.description);
+  setShowForm(true);
+};
+
+
+const handleDeleteSpecialty = (id) => {
+  const confirmDelete = window.confirm(
+    '¿Estás segura de que querés eliminar esta especialidad?'
+  );
+
+  if (!confirmDelete) {
+    return;
+  }
+
+  setSpecialtiesList((currentList) =>
+    currentList.filter((spec) => spec.id !== id)
+  );
+
+  if (editingId === id) {
+    setEditingId(null);
+    setName('');
+    setDescription('');
+    setShowForm(false);
+  }
 };
 
   const filteredSpecialties = specialtiesList.filter(
