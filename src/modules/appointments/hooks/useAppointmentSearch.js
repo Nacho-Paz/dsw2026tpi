@@ -1,174 +1,120 @@
-import { useEffect, useMemo, useState } from 'react';
-import { getDoctors } from '../../doctors/services/doctorService';
-import { getSpecialties } from '../../specialities/services/specialtyService';
-import { formatDate, getToday } from '../../shared/helpers/dates';
-import { getErrorMessage } from '../../shared/helpers/errors';
-import { searchAppointments } from '../services/appointmentService';
+import { useEffect, useState } from "react";
+import AppointmentsService from "../services/AppointmentsService";
+import {
+  INITIAL_FILTERS,
+  PAGE_SIZE,
+  LOAD_ERROR,
+  CATALOG_ERROR,
+} from "../constants/appointmentConstants";
 
-export const PAGE_SIZE = 10;
-export const MIN_DNI_LENGTH = 7;
-export const MAX_DNI_LENGTH = 10;
+const nowLabel = () =>
+  new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
 
-export function useAppointmentsSearch() {
-  // "filters" es lo que el usuario está escribiendo;
-  // "applied" son los filtros con los que se hizo la última búsqueda.
-  const [filters, setFilters] = useState(() => ({
-    dni: '',
-    specialtyId: '',
-    doctorId: '',
-    date: getToday(),
-  }));
-  const [applied, setApplied] = useState(filters);
-  const [page, setPage] = useState(1);
-  const [reloadKey, setReloadKey] = useState(0);
-
-  const [items, setItems] = useState([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [searchError, setSearchError] = useState('');
-  const [lastUpdated, setLastUpdated] = useState('');
+export default function useAppointments() {
+  const [filters, setFilters] = useState(INITIAL_FILTERS); // lo que se escribe
+  const [appliedFilters, setAppliedFilters] = useState(INITIAL_FILTERS); // lo que se buscó
+  const [pageIndex, setPageIndex] = useState(1);
 
   const [specialties, setSpecialties] = useState([]);
   const [doctors, setDoctors] = useState([]);
-  const [optionsError, setOptionsError] = useState('');
+  const [loadingCatalogs, setLoadingCatalogs] = useState(true);
+  const [catalogError, setCatalogError] = useState(null);
 
-  const dniInvalid = filters.dni !== '' && filters.dni.length < MIN_DNI_LENGTH;
+  const [appointments, setAppointments] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState("—");
+  const [reloadKey, setReloadKey] = useState(0);
 
-  // Opciones de los selects de especialidad y doctor
+  // Catálogos para los selects
   useEffect(() => {
     let ignore = false;
-
-    async function loadOptions() {
+    (async () => {
+      setLoadingCatalogs(true);
+      setCatalogError(null);
       try {
-        const [specialtiesResult, doctorsResult] = await Promise.all([
-          getSpecialties({ page: 1, pageSize: 100 }),
-          getDoctors({ page: 1, pageSize: 100 }),
+        const [s, d] = await Promise.all([
+          AppointmentsService.getSpecialties(),
+          AppointmentsService.getDoctors(),
         ]);
         if (ignore) return;
-        setSpecialties(specialtiesResult.data);
-        setDoctors(doctorsResult.data);
-        setOptionsError('');
-      } catch (err) {
-        if (!ignore) {
-          setOptionsError(
-            getErrorMessage(
-              err,
-              'No se pudieron cargar las especialidades y los doctores.'
-            )
-          );
-        }
+        setSpecialties(s);
+        setDoctors(d);
+      } catch {
+        if (!ignore) setCatalogError(CATALOG_ERROR);
+      } finally {
+        if (!ignore) setLoadingCatalogs(false);
       }
-    }
-
-    loadOptions();
-    return () => {
-      ignore = true;
-    };
+    })();
+    return () => { ignore = true; };
   }, [reloadKey]);
 
-  // Búsqueda: corre al entrar, al aplicar filtros, al cambiar de página y al reintentar
+  // Búsqueda paginada
   useEffect(() => {
     let ignore = false;
-
-    async function loadAppointments() {
+    (async () => {
       setLoading(true);
-      setSearchError('');
+      setError(null);
       try {
-        const result = await searchAppointments({
-          ...applied,
-          page,
+        const result = await AppointmentsService.searchAppointments({
+          ...appliedFilters,
+          pageIndex,
           pageSize: PAGE_SIZE,
         });
         if (ignore) return;
-        setItems(result.data);
+        setAppointments(result.items);
         setTotal(result.total);
-        setLastUpdated(
-          new Date().toLocaleTimeString('es-AR', {
-            hour: '2-digit',
-            minute: '2-digit',
-          })
-        );
-      } catch (err) {
-        if (!ignore) {
-          setItems([]);
-          setSearchError(
-            getErrorMessage(
-              err,
-              'No se pudieron cargar los turnos. Intentá de nuevo.'
-            )
-          );
-        }
+        setLastUpdated(nowLabel());
+      } catch {
+        if (ignore) return;
+        setError(LOAD_ERROR);
+        setAppointments([]);
+        setTotal(0);
       } finally {
         if (!ignore) setLoading(false);
       }
-    }
+    })();
+    return () => { ignore = true; };
+  }, [appliedFilters, pageIndex, reloadKey]);
 
-    loadAppointments();
-    return () => {
-      ignore = true;
-    };
-  }, [applied, page, reloadKey]);
+  // Doctores según la especialidad elegida (el doctor trae specialty.specialtyId)
+  const filteredDoctors = filters.specialtyId
+    ? doctors.filter((d) => String(d.specialty?.specialtyId) === String(filters.specialtyId))
+    : doctors;
 
-  // Si se eligió una especialidad, el select de doctores muestra solo los de esa especialidad
-  const doctorOptions = useMemo(
-    () =>
-      filters.specialtyId
-        ? doctors.filter(
-            (doctor) => doctor.specialty?.specialtyId === filters.specialtyId
-          )
-        : doctors,
-    [doctors, filters.specialtyId]
-  );
+  const changeFilter = (field, value) =>
+    setFilters((prev) => ({
+      ...prev,
+      [field]: value,
+      ...(field === "specialtyId" ? { doctorId: "" } : {}),
+    }));
 
-  // Chips con los filtros de la última búsqueda
-  const specialtyName = specialties.find(
-    (specialty) => specialty.id === applied.specialtyId
-  )?.name;
-  const doctorName = doctors.find((doctor) => doctor.id === applied.doctorId)
-    ?.name;
-  const chips = [
-    applied.dni && `DNI: ${applied.dni}`,
-    specialtyName && `Especialidad: ${specialtyName}`,
-    doctorName && `Doctor: ${doctorName}`,
-    applied.date && `Fecha: ${formatDate(applied.date)}`,
-  ].filter(Boolean);
-
-  // El DNI solo admite números (el back lo recibe como número, sin puntos)
-  const updateFilter = (field, value) => {
-    const clean =
-      field === 'dni' ? value.replace(/\D/g, '').slice(0, MAX_DNI_LENGTH) : value;
-    setFilters((current) => ({ ...current, [field]: clean }));
+  const applyFilters = (e) => {
+    e.preventDefault();
+    setPageIndex(1);
+    setAppliedFilters({ ...filters });
   };
 
-  // Al cambiar de especialidad se limpia el doctor elegido
-  const changeSpecialty = (specialtyId) =>
-    setFilters((current) => ({ ...current, specialtyId, doctorId: '' }));
-
-  const applyFilters = () => {
-    if (dniInvalid) return;
-    setApplied({ ...filters });
-    setPage(1);
+  const clearFilters = () => {
+    setFilters(INITIAL_FILTERS);
+    setAppliedFilters(INITIAL_FILTERS);
+    setPageIndex(1);
   };
 
-  const reload = () => setReloadKey((key) => key + 1);
+  const removeFilter = (field) => {
+    const updated = { ...appliedFilters, [field]: "" };
+    setFilters(updated);
+    setAppliedFilters(updated);
+    setPageIndex(1);
+  };
+
+  const retry = () => setReloadKey((k) => k + 1);
 
   return {
-    filters,
-    applied,
-    page,
-    items,
-    total,
-    loading,
-    error: searchError || optionsError,
-    lastUpdated,
-    specialties,
-    doctorOptions,
-    chips,
-    dniInvalid,
-    setPage,
-    updateFilter,
-    changeSpecialty,
-    applyFilters,
-    reload,
+    filters, appliedFilters, specialties, doctors, filteredDoctors,
+    loadingCatalogs, catalogError, appointments, total, pageIndex,
+    loading, error, lastUpdated,
+    changeFilter, applyFilters, clearFilters, removeFilter, setPageIndex, retry,
   };
 }
