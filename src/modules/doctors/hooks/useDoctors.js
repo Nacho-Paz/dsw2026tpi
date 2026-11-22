@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { deleteDoctor, getDoctors } from '../services/doctorService.js';
+import { deleteDoctor, getDoctors } from '../services/DoctorService.js';
 
 export const MIN_SEARCH_LENGTH = 3;
 export const MAX_SEARCH_LENGTH = 100;
