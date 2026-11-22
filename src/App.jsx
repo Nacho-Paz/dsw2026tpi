@@ -19,6 +19,9 @@ import AppointmentsPage from './modules/patients/pages/AppointmentsPage';
 import DashboardLayout from './modules/dashboard/components/DashboardLayout';
 import OverviewPage from './modules/dashboard/pages/OverviewPage';
 
+// Doctor Module
+import DoctorFormPage from './modules/doctors/pages/DoctorFormPage';
+
 // Domain Modules (Screaming Architecture)
 import DoctorsPage from './modules/doctors/pages/DoctorsPage';
 import SpecialtiesPage from './modules/specialties/pages/SpecialtiesPage';
@@ -92,6 +95,11 @@ const routes = [
         path: 'doctors',
         element: <DoctorsPage />,
       },
+      {
+        path: 'doctors/new',
+        element: <DoctorFormPage />,
+      },
+      
     ],
   },
 

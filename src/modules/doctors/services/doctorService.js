@@ -89,3 +89,11 @@ export const deleteDoctor = async (id) => {
   await instance.delete(`/api/doctors/${id}`);
 };
 
+export async function createDoctor({ name, licenseNumber, specialtyId }) {
+  const { data } = await instance.post('/doctors', {
+    name,
+    licenseNumber,
+    specialtyId,
+  });
+  return data;
+}
