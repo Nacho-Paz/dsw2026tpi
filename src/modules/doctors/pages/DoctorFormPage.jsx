@@ -50,7 +50,7 @@ function DoctorFormPage() {
     if (name.length < 3 || name.length > 100)
       next.name = 'El nombre debe tener entre 3 y 100 caracteres.';
     if (!form.specialtyId) next.specialtyId = 'Seleccioná una especialidad.';
-    if (!form.licenseNumber.trim()) next.licenseNumber = 'La licencia es obligatoria.';
+    if (!form.licenseNumber.trim()) next.licenseNumber = 'La matrícula es obligatoria.';
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -118,7 +118,7 @@ function DoctorFormPage() {
           </label>
 
           <label className="flex flex-col gap-1.5 text-sm font-semibold text-med-primary-900">
-            Número de licencia médica
+            Matrícula
             <input name="licenseNumber" value={form.licenseNumber} onChange={handleChange}
               placeholder="ID-45920-X" className={FIELD} />
             {errors.licenseNumber && <span className="text-xs font-normal text-med-danger-text">{errors.licenseNumber}</span>}
