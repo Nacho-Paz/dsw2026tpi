@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Card from '../../shared/components/Card';
 import Button from '../../shared/components/Button';
 import { createDoctor } from '../services/doctorService';
-//import { getSpecialties } from '../../specialties/services/specialtyService';
+import { getAllSpecialties } from '../../specialties/services/SpecialtiesService';
 
 const FIELD =
   'w-full px-3 py-2 text-sm bg-white border border-med-border rounded-lg text-med-text-main focus:outline-none focus:ring-1 focus:ring-med-primary-600';
@@ -15,12 +15,31 @@ const MOCK_SPECIALTIES = [
 function DoctorFormPage() {
   const navigate = useNavigate();
   const [specialties, setSpecialties] = useState([]);
+  const [loadingSpecialties, setLoadingSpecialties] = useState(true);
   const [form, setForm] = useState({ name: '', specialtyId: '', licenseNumber: '' });
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState('');
   const [saving, setSaving] = useState(false);
 
- 
+  useEffect(() => {
+    let ignore = false;
+
+    const loadSpecialties = async () => {
+      try {
+        const list = await getAllSpecialties();
+        if (!ignore) setSpecialties(list);
+      } catch {
+        if (!ignore) setServerError('No se pudo cargar la lista de especialidades.');
+      } finally {
+        if (!ignore) setLoadingSpecialties(false);
+      }
+    };
+
+    loadSpecialties();
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -80,12 +99,21 @@ function DoctorFormPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <label className="flex flex-col gap-1.5 text-sm font-semibold text-med-primary-900">
             Especialidad
-            <select name="specialtyId" value={form.specialtyId} onChange={handleChange} className={FIELD}>
-              <option value="">Seleccione especialidad</option>
-              {specialties.map((s) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
+            <select
+              name="specialtyId"
+              value={form.specialtyId}
+              onChange={handleChange}
+              disabled={loadingSpecialties || saving}
+              className={FIELD}
+            >
+            <option value="">
+            {loadingSpecialties ? 'Cargando especialidades...' : 'Seleccione especialidad'}
+            </option>
+            {specialties.map((s) => (
+            <option key={s.id} value={s.id}>{s.name}</option>
               ))}
             </select>
+            
             {errors.specialtyId && <span className="text-xs font-normal text-med-danger-text">{errors.specialtyId}</span>}
           </label>
 
