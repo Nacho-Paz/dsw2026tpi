@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Card from '../../shared/components/Card';
 import Button from '../../shared/components/Button';
 import DoctorRow from '../components/DoctorRow';
-import { ClockIcon, SearchIcon } from '../components/DoctorIcons';
+import { SearchIcon } from '../components/DoctorIcons';
 import {
   MAX_SEARCH_LENGTH,
   MIN_SEARCH_LENGTH,
@@ -41,6 +41,7 @@ function DoctorsPage() {
 
   const handleDelete = (doctor) => {
     if (!window.confirm(`¿Eliminar a ${doctor.name}?`)) return;
+
     removeDoctor(doctor.id);
   };
 
@@ -74,14 +75,6 @@ function DoctorsPage() {
               className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-med-border rounded-lg text-med-text-main placeholder-med-text-muted focus:outline-none focus:ring-1 focus:ring-med-primary-600"
             />
           </div>
-
-          <Button
-            onClick={() => navigate('/admin/availability')}
-            className="flex items-center gap-2 bg-med-primary-900 hover:bg-med-primary-800 text-white"
-          >
-            <ClockIcon />
-            <span>Agregar Disponibilidad Horaria</span>
-          </Button>
 
           <Button
             onClick={() => navigate('/admin/doctors/new')}

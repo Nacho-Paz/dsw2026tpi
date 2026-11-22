@@ -1,7 +1,7 @@
-import useAppointments from "../hooks/useAppointments";
-import AppointmentsFilterForm from "../components/AppointmentsFilterForm";
-import AppointmentsTable from "../components/AppointmentsTable";
-import { PAGE_SIZE } from "../constants/appointmentConstants";
+import useAppointments from '../hooks/useAppointmentSearch';
+import AppointmentsFilterForm from '../components/AppointmentsFilterForm';
+import AppointmentsTable from '../components/AppointmentsTable';
+import { PAGE_SIZE } from '../constants/appointmentConstants';
 
 function AppointmentsSearchPage() {
   const a = useAppointments();

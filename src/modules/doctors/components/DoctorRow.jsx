@@ -1,5 +1,4 @@
-import { useNavigate } from 'react-router-dom';
-import { EyeIcon, PencilIcon, TrashIcon } from './DoctorIcons';
+import { TrashIcon } from './DoctorIcons';
 
 const getInitials = (name) =>
   name
@@ -10,9 +9,6 @@ const getInitials = (name) =>
     .map((word) => word[0])
     .join('')
     .toUpperCase();
-
-const ACTION_BUTTON =
-  'p-1.5 rounded-lg hover:bg-med-primary-50 text-med-primary-600 hover:text-med-primary-900 transition';
 
 function StatusBadge({ active }) {
   if (active) {
@@ -33,7 +29,6 @@ function StatusBadge({ active }) {
 }
 
 function DoctorRow({ doctor, onDelete }) {
-  const navigate = useNavigate();
   const isActive = doctor.statusType === 'active';
 
   return (
@@ -77,26 +72,6 @@ function DoctorRow({ doctor, onDelete }) {
 
       <td className="px-6 py-4 text-right">
         <div className="flex items-center justify-end gap-2">
-          <button
-            title="Ver disponibilidad"
-            aria-label={`Ver disponibilidad de ${doctor.name}`}
-            className={ACTION_BUTTON}
-            onClick={() =>
-              navigate(`/admin/availability?doctorId=${doctor.id}`)
-            }
-          >
-            <EyeIcon />
-          </button>
-
-          <button
-            title="Editar profesional"
-            aria-label={`Editar a ${doctor.name}`}
-            className={ACTION_BUTTON}
-            onClick={() => navigate(`/admin/doctors/${doctor.id}/edit`)}
-          >
-            <PencilIcon />
-          </button>
-
           <button
             title="Eliminar profesional"
             aria-label={`Eliminar a ${doctor.name}`}

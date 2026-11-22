@@ -99,7 +99,6 @@ const routes = [
         path: 'doctors/new',
         element: <DoctorFormPage />,
       },
-      
     ],
   },
 

@@ -60,6 +60,7 @@ export const getDoctors = async ({ name, page = 1, pageSize = 10 } = {}) => {
       doctor.name.toLowerCase().includes(text)
     );
     const start = (page - 1) * pageSize;
+
     return {
       pageSize,
       pageIndex: toPageIndex(page),
@@ -75,6 +76,7 @@ export const getDoctors = async ({ name, page = 1, pageSize = 10 } = {}) => {
       name: name || undefined,
     },
   });
+
   return res.data;
 };
 
@@ -83,6 +85,7 @@ export const deleteDoctor = async (id) => {
   if (USE_MOCK) {
     await wait(300);
     mockDoctors = mockDoctors.filter((doctor) => doctor.id !== id);
+
     return;
   }
 
@@ -90,10 +93,30 @@ export const deleteDoctor = async (id) => {
 };
 
 export async function createDoctor({ name, licenseNumber, specialtyId }) {
-  const { data } = await instance.post('/doctors', {
+  if (USE_MOCK) {
+    await wait(300);
+    const specialty = mockSpecialties.find(
+      (item) => item.specialtyId === specialtyId
+    );
+
+    mockDoctors = [
+      {
+        id: crypto.randomUUID(),
+        name,
+        licenseNumber,
+        specialty,
+      },
+      ...mockDoctors,
+    ];
+
+    return;
+  }
+
+  const { data } = await instance.post('/api/doctors', {
     name,
     licenseNumber,
     specialtyId,
   });
+
   return data;
 }

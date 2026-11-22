@@ -29,8 +29,10 @@ export function useDoctors(searchTerm) {
         setLoading(true);
         setError('');
         try {
-          const result = await getDoctors(query);
+          const result = await getDoctors({ name: query });
+
           if (ignore) return;
+
           setDoctors(result.data);
           setTotal(result.total);
         } catch (err) {

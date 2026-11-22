@@ -1,14 +1,17 @@
-import { useEffect, useState } from "react";
-import AppointmentsService from "../services/AppointmentsService";
+import { useEffect, useState } from 'react';
+import AppointmentsService from '../services/appointmentService';
 import {
   INITIAL_FILTERS,
   PAGE_SIZE,
   LOAD_ERROR,
   CATALOG_ERROR,
-} from "../constants/appointmentConstants";
+} from '../constants/appointmentConstants';
 
 const nowLabel = () =>
-  new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+  new Date().toLocaleTimeString('es-AR', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 
 export default function useAppointments() {
   const [filters, setFilters] = useState(INITIAL_FILTERS); // lo que se escribe
@@ -24,12 +27,13 @@ export default function useAppointments() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [lastUpdated, setLastUpdated] = useState("—");
+  const [lastUpdated, setLastUpdated] = useState('—');
   const [reloadKey, setReloadKey] = useState(0);
 
   // Catálogos para los selects
   useEffect(() => {
     let ignore = false;
+
     (async () => {
       setLoadingCatalogs(true);
       setCatalogError(null);
@@ -38,7 +42,9 @@ export default function useAppointments() {
           AppointmentsService.getSpecialties(),
           AppointmentsService.getDoctors(),
         ]);
+
         if (ignore) return;
+
         setSpecialties(s);
         setDoctors(d);
       } catch {
@@ -47,12 +53,16 @@ export default function useAppointments() {
         if (!ignore) setLoadingCatalogs(false);
       }
     })();
-    return () => { ignore = true; };
+
+    return () => {
+      ignore = true;
+    };
   }, [reloadKey]);
 
   // Búsqueda paginada
   useEffect(() => {
     let ignore = false;
+
     (async () => {
       setLoading(true);
       setError(null);
@@ -62,12 +72,15 @@ export default function useAppointments() {
           pageIndex,
           pageSize: PAGE_SIZE,
         });
+
         if (ignore) return;
+
         setAppointments(result.items);
         setTotal(result.total);
         setLastUpdated(nowLabel());
       } catch {
         if (ignore) return;
+
         setError(LOAD_ERROR);
         setAppointments([]);
         setTotal(0);
@@ -75,19 +88,25 @@ export default function useAppointments() {
         if (!ignore) setLoading(false);
       }
     })();
-    return () => { ignore = true; };
+
+    return () => {
+      ignore = true;
+    };
   }, [appliedFilters, pageIndex, reloadKey]);
 
   // Doctores según la especialidad elegida (el doctor trae specialty.specialtyId)
   const filteredDoctors = filters.specialtyId
-    ? doctors.filter((d) => String(d.specialty?.specialtyId) === String(filters.specialtyId))
+    ? doctors.filter(
+        (d) =>
+          String(d.specialty?.specialtyId) === String(filters.specialtyId)
+      )
     : doctors;
 
   const changeFilter = (field, value) =>
     setFilters((prev) => ({
       ...prev,
       [field]: value,
-      ...(field === "specialtyId" ? { doctorId: "" } : {}),
+      ...(field === 'specialtyId' ? { doctorId: '' } : {}),
     }));
 
   const applyFilters = (e) => {
@@ -103,7 +122,8 @@ export default function useAppointments() {
   };
 
   const removeFilter = (field) => {
-    const updated = { ...appliedFilters, [field]: "" };
+    const updated = { ...appliedFilters, [field]: '' };
+
     setFilters(updated);
     setAppliedFilters(updated);
     setPageIndex(1);
@@ -112,9 +132,24 @@ export default function useAppointments() {
   const retry = () => setReloadKey((k) => k + 1);
 
   return {
-    filters, appliedFilters, specialties, doctors, filteredDoctors,
-    loadingCatalogs, catalogError, appointments, total, pageIndex,
-    loading, error, lastUpdated,
-    changeFilter, applyFilters, clearFilters, removeFilter, setPageIndex, retry,
+    filters,
+    appliedFilters,
+    specialties,
+    doctors,
+    filteredDoctors,
+    loadingCatalogs,
+    catalogError,
+    appointments,
+    total,
+    pageIndex,
+    loading,
+    error,
+    lastUpdated,
+    changeFilter,
+    applyFilters,
+    clearFilters,
+    removeFilter,
+    setPageIndex,
+    retry,
   };
 }

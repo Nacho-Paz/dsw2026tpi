@@ -1,15 +1,27 @@
-import Card from "../../shared/components/Card";
-import TablePagination from "../../shared/components/TablePagination";
-import AppointmentRow from "./AppointmentRow";
-import TableMessage from "./TableMessage";
+import Card from '../../shared/components/Card';
+import TablePagination from '../../shared/components/TablePagination';
+import AppointmentRow from './AppointmentRow';
+import TableMessage from './TableMessage';
 
-const COLUMNS = ["Fecha", "Departamento", "Paciente", "Estado", "Acciones"];
+const COLUMNS = ['Fecha', 'Departamento', 'Paciente', 'Estado', 'Acciones'];
 
-function AppointmentsTable({ appointments, loading, error, pageIndex, pageSize, total, onPageChange, onRetry, onSelect }) {
+function AppointmentsTable({
+  appointments,
+  loading,
+  error,
+  pageIndex,
+  pageSize,
+  total,
+  onPageChange,
+  onRetry,
+  onSelect,
+}) {
   return (
     <Card className="p-0 overflow-hidden border-med-border">
       <div className="p-5 border-b border-med-border">
-        <h2 className="text-base font-bold text-med-primary-900">Registros de Citas</h2>
+        <h2 className="text-base font-bold text-med-primary-900">
+          Registros de Citas
+        </h2>
       </div>
 
       <div className="overflow-x-auto">
@@ -17,7 +29,12 @@ function AppointmentsTable({ appointments, loading, error, pageIndex, pageSize, 
           <thead className="bg-med-primary-50/70 text-[11px] uppercase tracking-wider text-med-text-sub border-b border-med-border">
             <tr>
               {COLUMNS.map((c, i) => (
-                <th key={c} className={`px-6 py-3.5 ${i === 3 ? "text-center" : ""} ${i === 4 ? "text-right" : ""}`}>{c}</th>
+                <th
+                  key={c}
+                  className={`px-6 py-3.5 ${i === 3 ? 'text-center' : ''} ${i === 4 ? 'text-right' : ''}`}
+                >
+                  {c}
+                </th>
               ))}
             </tr>
           </thead>
@@ -27,18 +44,30 @@ function AppointmentsTable({ appointments, loading, error, pageIndex, pageSize, 
             ) : error ? (
               <TableMessage
                 action={
-                  <button type="button" onClick={onRetry} className="ml-2 font-semibold text-med-primary-700 hover:underline">
+                  <button
+                    type="button"
+                    onClick={onRetry}
+                    className="ml-2 font-semibold text-med-primary-700 hover:underline"
+                  >
                     Reintentar
                   </button>
                 }
               >
-                <span role="alert" className="text-red-600 font-medium">{error}</span>
+                <span role="alert" className="text-red-600 font-medium">
+                  {error}
+                </span>
               </TableMessage>
             ) : appointments.length === 0 ? (
-              <TableMessage>No se encontraron citas con los criterios seleccionados.</TableMessage>
+              <TableMessage>
+                No se encontraron citas con los criterios seleccionados.
+              </TableMessage>
             ) : (
               appointments.map((item) => (
-                <AppointmentRow key={item.appointmentId} item={item} onSelect={onSelect} />
+                <AppointmentRow
+                  key={item.appointmentId}
+                  item={item}
+                  onSelect={onSelect}
+                />
               ))
             )}
           </tbody>
