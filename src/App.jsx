@@ -21,6 +21,7 @@ import OverviewPage from './modules/dashboard/pages/OverviewPage';
 
 // Doctor Module
 import DoctorFormPage from './modules/doctors/pages/DoctorFormPage';
+import AvailabilityPage from './modules/doctors/pages/AvailabilityPage'; // ajustá la ruta si está en otra carpeta
 
 // Domain Modules (Screaming Architecture)
 import DoctorsPage from './modules/doctors/pages/DoctorsPage';
@@ -100,18 +101,13 @@ const routes = [
         element: <DoctorFormPage />,
       },
       {
-        path: 'doctors',
-        element: <DoctorsPage />,
-      },
-      {
-        path: 'doctors/new',
-        element: <DoctorFormPage />,
-      },
-      {
         path: 'doctors/:id/edit',
         element: <DoctorFormPage />,
       },
-      
+      {
+        path: 'availability',
+        element: <AvailabilityPage />,
+      },
     ],
   },
 

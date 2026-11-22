@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import Card from '../../shared/components/Card';
 import Button from '../../shared/components/Button';
-import { createDoctor, updateDoctor } from '../services/DoctorsService';
+import { createDoctor, updateDoctor } from '../services/DoctorService';
 import { getAllSpecialties } from '../../specialties/services/SpecialtiesService';
 
 const FIELD =

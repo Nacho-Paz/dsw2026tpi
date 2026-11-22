@@ -3,7 +3,7 @@ import { buildDefaultDays, WEEK_DAYS } from '../constants/weekDays';
 import {
   getDoctorAvailabilities,
   saveDoctorAvailabilities,
-} from '../services/DoctorsService';
+} from '../services/DoctorService';
 
 const LOAD_ERROR = 'No se pudo obtener la disponibilidad del profesional.';
 const SAVE_ERROR = 'No se pudo guardar la disponibilidad. Verificá los datos.';
