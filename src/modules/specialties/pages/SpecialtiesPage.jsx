@@ -186,11 +186,11 @@ const handleDeleteSpecialty = (id) => {
   }
 };
 
-  const filteredSpecialties = specialtiesList.filter(
-    (item) =>
-      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredSpecialties = specialtiesList.filter((item) =>
+  searchTerm.trim().length < 3
+    ? true
+    : item.name.toLowerCase().includes(searchTerm.trim().toLowerCase())
+);
 
   return (
     <div className="flex flex-col gap-6">
