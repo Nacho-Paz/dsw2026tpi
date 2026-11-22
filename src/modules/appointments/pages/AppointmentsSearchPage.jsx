@@ -1,93 +1,268 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Card from '../../shared/components/Card';
 import Button from '../../shared/components/Button';
+import TablePagination from '../../shared/components/TablePagination';
+import { getDoctors } from '../../doctors/services/doctorService';
+import { getSpecialties } from '../../specialities/services/specialtyService';
+import { searchAppointments } from '../services/appointmentService';
+
+const PAGE_SIZE = 10;
+const MIN_DNI_LENGTH = 7;
+const MAX_DNI_LENGTH = 10;
+
+// Estados que devuelve el back (appointmentStatus) -> texto y colores
+const STATUS = {
+  BOOKED: {
+    label: 'Reservado',
+    badge: 'bg-med-active-bg text-med-active-text',
+    dot: 'bg-med-active-text',
+  },
+  ATTENDED: {
+    label: 'Atendido',
+    badge: 'bg-slate-100 text-slate-700',
+    dot: 'bg-slate-500',
+  },
+  CANCELLED: {
+    label: 'Cancelado',
+    badge: 'bg-med-danger-bg text-med-danger-text',
+    dot: 'bg-med-danger-text',
+  },
+  NO_SHOW: {
+    label: 'No asistió',
+    badge: 'bg-amber-50 text-amber-700',
+    dot: 'bg-amber-500',
+  },
+};
+
+// Fecha de hoy en hora LOCAL con formato YYYY-MM-DD.
+// (toISOString() usa UTC y de noche daría el día siguiente)
+const getToday = () => new Date().toLocaleDateString('en-CA');
+
+// '2026-10-28' -> '28 oct 2026'. Se arma con año/mes/día a mano porque
+// new Date('2026-10-28') se interpreta en UTC y mostraría el día anterior.
+const formatDate = (value) => {
+  if (!/^\d{4}-\d{2}-\d{2}/.test(value)) return value;
+  const [year, month, day] = value.slice(0, 10).split('-').map(Number);
+  return new Date(year, month - 1, day).toLocaleDateString('es-AR', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+};
+
+const getErrorMessage = (err, fallback) => {
+  if (err.response?.status === 429) {
+    return 'Hiciste demasiados pedidos seguidos. Esperá unos segundos e intentá de nuevo.';
+  }
+  return err.response?.data?.message ?? fallback;
+};
+
+// ---------- Íconos (solo se usan en esta página) ----------
+
+function SearchIcon() {
+  return (
+    <svg
+      className="w-4 h-4"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+      />
+    </svg>
+  );
+}
+
+function RefreshIcon() {
+  return (
+    <svg
+      className="w-4 h-4"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+      />
+    </svg>
+  );
+}
+
+function FilterIcon() {
+  return (
+    <svg
+      className="w-4 h-4"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+      />
+    </svg>
+  );
+}
+
+function AppointmentIcon() {
+  return (
+    <svg
+      className="w-5 h-5"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.75"
+        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+      />
+    </svg>
+  );
+}
+
+// ---------- Página ----------
 
 function AppointmentsSearchPage() {
-  const [patientQuery, setPatientQuery] = useState('Johnathan Doe');
-  const [specialtyFilter, setSpecialtyFilter] = useState('Todas');
-  const [doctorFilter, setDoctorFilter] = useState('Todos');
-  const [dateFilter, setDateFilter] = useState('2023-10-24');
+  // "filters" es lo que el usuario está escribiendo;
+  // "applied" son los filtros con los que se hizo la última búsqueda.
+  const [filters, setFilters] = useState(() => ({
+    dni: '',
+    specialtyId: '',
+    doctorId: '',
+    date: getToday(),
+  }));
+  const [applied, setApplied] = useState(filters);
+  const [page, setPage] = useState(1);
 
-  const appointmentsData = [
-    {
-      id: 1,
-      date: '24 Oct, 2023',
-      time: '10:30 AM',
-      department: 'Cardiology',
-      doctor: 'Dr. Robert Smith',
-      patient: 'Johnathan Doe',
-      dni: '40.123.456',
-      status: 'CONFIRMADO',
-      statusType: 'confirmed',
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="1.75"
-            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-          />
-        </svg>
-      ),
-    },
-    {
-      id: 2,
-      date: '15 Oct, 2023',
-      time: '09:15 AM',
-      department: 'Neurology',
-      doctor: 'Dra. Garcia',
-      patient: 'Johnathan Doe',
-      dni: '40.123.456',
-      status: 'COMPLETADO',
-      statusType: 'completed',
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="1.75"
-            d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-          />
-        </svg>
-      ),
-    },
-    {
-      id: 3,
-      date: '05 Oct, 2023',
-      time: '11:00 AM',
-      department: 'General Checkup',
-      doctor: 'Dr. Miller',
-      patient: 'Johnathan Doe',
-      dni: '40.123.456',
-      status: 'CANCELADO',
-      statusType: 'cancelled',
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="1.75"
-            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-          />
-        </svg>
-      ),
-    },
-  ];
+  const [items, setItems] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [lastUpdated, setLastUpdated] = useState('');
+
+  const [specialties, setSpecialties] = useState([]);
+  const [doctors, setDoctors] = useState([]);
+
+  const dniInvalid = filters.dni !== '' && filters.dni.length < MIN_DNI_LENGTH;
+
+  // Opciones de los selects (se cargan una sola vez)
+  useEffect(() => {
+    let ignore = false;
+
+    async function loadOptions() {
+      try {
+        const [specialtiesResult, doctorsResult] = await Promise.all([
+          getSpecialties({ page: 1, pageSize: 100 }),
+          getDoctors({ page: 1, pageSize: 100 }),
+        ]);
+        if (ignore) return;
+        setSpecialties(specialtiesResult.data);
+        setDoctors(doctorsResult.data);
+      } catch (err) {
+        if (!ignore) {
+          setError(
+            getErrorMessage(
+              err,
+              'No se pudieron cargar las especialidades y los doctores.'
+            )
+          );
+        }
+      }
+    }
+
+    loadOptions();
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  // Búsqueda: corre al entrar, al aplicar filtros y al cambiar de página
+  useEffect(() => {
+    let ignore = false;
+
+    async function loadAppointments() {
+      setLoading(true);
+      setError('');
+      try {
+        const result = await searchAppointments({
+          ...applied,
+          page,
+          pageSize: PAGE_SIZE,
+        });
+        if (ignore) return;
+        setItems(result.data);
+        setTotal(result.total);
+        setLastUpdated(
+          new Date().toLocaleTimeString('es-AR', {
+            hour: '2-digit',
+            minute: '2-digit',
+          })
+        );
+      } catch (err) {
+        if (!ignore) {
+          setItems([]);
+          setError(
+            getErrorMessage(err, 'No se pudieron cargar los turnos. Intentá de nuevo.')
+          );
+        }
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    }
+
+    loadAppointments();
+    return () => {
+      ignore = true;
+    };
+  }, [applied, page]);
+
+  // Si se eligió una especialidad, el select de doctores muestra solo los de esa especialidad
+  const doctorOptions = useMemo(
+    () =>
+      filters.specialtyId
+        ? doctors.filter(
+            (doctor) => doctor.specialty?.specialtyId === filters.specialtyId
+          )
+        : doctors,
+    [doctors, filters.specialtyId]
+  );
+
+  const updateFilter = (field, value) =>
+    setFilters((current) => ({ ...current, [field]: value }));
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (dniInvalid) return;
+    setApplied({ ...filters });
+    setPage(1);
+  }
+
+  // Chips con los filtros que se aplicaron en la última búsqueda
+  const specialtyName = specialties.find(
+    (specialty) => specialty.id === applied.specialtyId
+  )?.name;
+  const doctorName = doctors.find((doctor) => doctor.id === applied.doctorId)?.name;
+  const chips = [
+    applied.dni && `DNI: ${applied.dni}`,
+    specialtyName && `Especialidad: ${specialtyName}`,
+    doctorName && `Doctor: ${doctorName}`,
+    applied.date && `Fecha: ${formatDate(applied.date)}`,
+  ].filter(Boolean);
 
   return (
     <div className="flex flex-col gap-6">
@@ -107,141 +282,160 @@ function AppointmentsSearchPage() {
           <h2 className="text-base font-bold text-med-primary-900">
             Criterios de Búsqueda
           </h2>
-          <div className="flex items-center gap-1.5 text-xs text-med-text-muted">
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-            <span>Última actualización: hace un momento</span>
-          </div>
+          {lastUpdated && (
+            <div className="flex items-center gap-1.5 text-xs text-med-text-muted">
+              <RefreshIcon />
+              <span>Última actualización: {lastUpdated}</span>
+            </div>
+          )}
         </div>
 
-        {/* Inputs de Filtros */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 mt-4 items-end">
-          {/* Nombre o DNI */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-med-text-sub">
-              Nombre o DNI del Paciente
-            </label>
-            <div className="relative">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-med-text-muted">
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
-              </span>
+        <form onSubmit={handleSubmit}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 mt-4 items-end">
+            {/* DNI */}
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor="filter-dni"
+                className="text-xs font-semibold text-med-text-sub"
+              >
+                DNI del Paciente
+              </label>
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-med-text-muted">
+                  <SearchIcon />
+                </span>
+                <input
+                  id="filter-dni"
+                  type="text"
+                  inputMode="numeric"
+                  value={filters.dni}
+                  onChange={(e) =>
+                    updateFilter(
+                      'dni',
+                      e.target.value.replace(/\D/g, '').slice(0, MAX_DNI_LENGTH)
+                    )
+                  }
+                  placeholder="Ej: 40123456"
+                  className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-med-border rounded-lg text-med-text-main placeholder-med-text-muted focus:outline-none focus:ring-1 focus:ring-med-primary-600"
+                />
+              </div>
+              {dniInvalid && (
+                <p className="text-xs text-med-danger-text">
+                  El DNI debe tener entre {MIN_DNI_LENGTH} y {MAX_DNI_LENGTH}{' '}
+                  dígitos.
+                </p>
+              )}
+            </div>
+
+            {/* Especialidad */}
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor="filter-specialty"
+                className="text-xs font-semibold text-med-text-sub"
+              >
+                Especialidad
+              </label>
+              <select
+                id="filter-specialty"
+                value={filters.specialtyId}
+                onChange={(e) =>
+                  // al cambiar de especialidad se limpia el doctor elegido
+                  setFilters((current) => ({
+                    ...current,
+                    specialtyId: e.target.value,
+                    doctorId: '',
+                  }))
+                }
+                className="w-full px-3 py-2 text-xs bg-white border border-med-border rounded-lg text-med-text-main focus:outline-none focus:ring-1 focus:ring-med-primary-600"
+              >
+                <option value="">Todas las Especialidades</option>
+                {specialties.map((specialty) => (
+                  <option key={specialty.id} value={specialty.id}>
+                    {specialty.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Doctor */}
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor="filter-doctor"
+                className="text-xs font-semibold text-med-text-sub"
+              >
+                Doctor
+              </label>
+              <select
+                id="filter-doctor"
+                value={filters.doctorId}
+                onChange={(e) => updateFilter('doctorId', e.target.value)}
+                className="w-full px-3 py-2 text-xs bg-white border border-med-border rounded-lg text-med-text-main focus:outline-none focus:ring-1 focus:ring-med-primary-600"
+              >
+                <option value="">Todos los Doctores</option>
+                {doctorOptions.map((doctor) => (
+                  <option key={doctor.id} value={doctor.id}>
+                    {doctor.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Fecha (el back la exige) */}
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor="filter-date"
+                className="text-xs font-semibold text-med-text-sub"
+              >
+                Fecha
+              </label>
               <input
-                type="text"
-                value={patientQuery}
-                onChange={(e) => setPatientQuery(e.target.value)}
-                placeholder="Nombre o DNI..."
-                className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-med-border rounded-lg text-med-text-main placeholder-med-text-muted focus:outline-none focus:ring-1 focus:ring-med-primary-600"
+                id="filter-date"
+                type="date"
+                required
+                value={filters.date}
+                onChange={(e) => updateFilter('date', e.target.value)}
+                className="w-full px-3 py-2 text-xs bg-white border border-med-border rounded-lg text-med-text-main focus:outline-none focus:ring-1 focus:ring-med-primary-600"
               />
             </div>
-          </div>
 
-          {/* Especialidad */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-med-text-sub">
-              Especialidad
-            </label>
-            <select
-              value={specialtyFilter}
-              onChange={(e) => setSpecialtyFilter(e.target.value)}
-              className="w-full px-3 py-2 text-xs bg-white border border-med-border rounded-lg text-med-text-main focus:outline-none focus:ring-1 focus:ring-med-primary-600"
-            >
-              <option value="Todas">Todas las Especialidades</option>
-              <option value="Cardiology">Cardiology</option>
-              <option value="Neurology">Neurology</option>
-              <option value="General Checkup">General Checkup</option>
-            </select>
-          </div>
-
-          {/* Doctor */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-med-text-sub">
-              Doctor
-            </label>
-            <select
-              value={doctorFilter}
-              onChange={(e) => setDoctorFilter(e.target.value)}
-              className="w-full px-3 py-2 text-xs bg-white border border-med-border rounded-lg text-med-text-main focus:outline-none focus:ring-1 focus:ring-med-primary-600"
-            >
-              <option value="Todos">Todos los Doctores</option>
-              <option value="Dr. Robert Smith">Dr. Robert Smith</option>
-              <option value="Dra. Garcia">Dra. Garcia</option>
-              <option value="Dr. Miller">Dr. Miller</option>
-            </select>
-          </div>
-
-          {/* Fecha */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-med-text-sub">
-              Fecha
-            </label>
-            <input
-              type="date"
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-              className="w-full px-3 py-2 text-xs bg-white border border-med-border rounded-lg text-med-text-main focus:outline-none focus:ring-1 focus:ring-med-primary-600"
-            />
-          </div>
-
-          {/* Botón Aplicar Filtros */}
-          <div>
-            <Button
-              onClick={() => alert('Filtros aplicados')}
-              className="w-full flex items-center justify-center gap-2 bg-med-primary-900 hover:bg-med-primary-800 text-white font-medium py-2 rounded-lg"
-            >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
+            {/* Botón Aplicar Filtros */}
+            <div>
+              <Button
+                type="submit"
+                disabled={loading || dniInvalid}
+                className="w-full flex items-center justify-center gap-2 bg-med-primary-900 hover:bg-med-primary-800 text-white font-medium py-2 rounded-lg"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
-                />
-              </svg>
-              <span>Aplicar Filtros</span>
-            </Button>
+                <FilterIcon />
+                <span>Aplicar Filtros</span>
+              </Button>
+            </div>
           </div>
-        </div>
+        </form>
 
         {/* Chips de Filtros Activos */}
-        <div className="flex flex-wrap items-center gap-2 mt-4 pt-3 border-t border-med-border-subtle">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-sky-100/70 text-sky-800">
-            Paciente: Johnathan Doe
-          </span>
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-sky-100/70 text-sky-800">
-            DNI: 40.123.456
-          </span>
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-            Filtro Activo: Próximos 7 Días
-          </span>
-        </div>
+        {chips.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 mt-4 pt-3 border-t border-med-border-subtle">
+            {chips.map((chip) => (
+              <span
+                key={chip}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-sky-100/70 text-sky-800"
+              >
+                {chip}
+              </span>
+            ))}
+          </div>
+        )}
       </Card>
+
+      {/* Mensaje de error */}
+      {error && (
+        <p
+          role="alert"
+          className="px-4 py-3 rounded-lg text-sm bg-med-danger-bg text-med-danger-text"
+        >
+          {error}
+        </p>
+      )}
 
       {/* Card Inferior: Registros de Citas */}
       <Card className="p-0 overflow-hidden border-med-border">
@@ -251,112 +445,122 @@ function AppointmentsSearchPage() {
           </h2>
         </div>
 
-        {/* Tabla de Citas */}
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead className="bg-med-primary-50/70 text-[11px] uppercase tracking-wider text-med-text-sub border-b border-med-border">
               <tr>
                 <th className="px-6 py-3.5">Fecha</th>
-                <th className="px-6 py-3.5">Departamento</th>
+                <th className="px-6 py-3.5">Especialidad</th>
                 <th className="px-6 py-3.5">Paciente</th>
                 <th className="px-6 py-3.5 text-center">Estado</th>
-                <th className="px-6 py-3.5 text-right">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-med-border-subtle">
-              {appointmentsData.map((item) => (
-                <tr
-                  key={item.id}
-                  className="hover:bg-gray-50/70 transition-colors"
-                >
-                  {/* Fecha y Hora */}
-                  <td className="px-6 py-4">
-                    <p className="font-bold text-med-primary-900 text-sm">
-                      {item.date}
-                    </p>
-                    <p className="text-xs text-med-text-muted mt-0.5">
-                      {item.time}
-                    </p>
-                  </td>
-
-                  {/* Departamento / Especialidad con Icono */}
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-med-primary-100 text-med-primary-700 flex items-center justify-center shrink-0">
-                        {item.icon}
-                      </div>
-                      <div>
-                        <p className="font-semibold text-med-primary-900">
-                          {item.department}
-                        </p>
-                        <p className="text-xs text-med-text-muted">
-                          {item.doctor}
-                        </p>
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* Paciente y DNI */}
-                  <td className="px-6 py-4">
-                    <p className="font-semibold text-med-text-main">
-                      {item.patient}
-                    </p>
-                    <p className="text-xs text-med-text-muted mt-0.5">
-                      DNI: {item.dni}
-                    </p>
-                  </td>
-
-                  {/* Estado (CONFIRMADO, COMPLETADO, CANCELADO) */}
-                  <td className="px-6 py-4 text-center">
-                    {item.statusType === 'confirmed' && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-med-active-bg text-med-active-text">
-                        <span className="w-1.5 h-1.5 rounded-full bg-med-active-text" />
-                        {item.status}
-                      </span>
-                    )}
-                    {item.statusType === 'completed' && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
-                        <span className="w-1.5 h-1.5 rounded-full bg-slate-500" />
-                        {item.status}
-                      </span>
-                    )}
-                    {item.statusType === 'cancelled' && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-med-danger-bg text-med-danger-text">
-                        <span className="w-1.5 h-1.5 rounded-full bg-med-danger-text" />
-                        {item.status}
-                      </span>
-                    )}
-                  </td>
-
-                  {/* Acciones */}
-                  <td className="px-6 py-4 text-right">
-                    <button
-                      onClick={() =>
-                        alert(`Ver detalle de cita de ${item.patient}`)
-                      }
-                      className="text-xs font-semibold text-med-primary-700 hover:text-med-primary-900 transition hover:underline"
-                    >
-                      Ver Detalle
-                    </button>
+              {loading && (
+                <tr>
+                  <td
+                    colSpan={4}
+                    className="px-6 py-8 text-center text-med-text-muted"
+                  >
+                    Cargando turnos...
                   </td>
                 </tr>
-              ))}
+              )}
+
+              {!loading && !error && items.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={4}
+                    className="px-6 py-8 text-center text-med-text-muted"
+                  >
+                    No hay turnos para los filtros elegidos.
+                  </td>
+                </tr>
+              )}
+
+              {!loading &&
+                items.map((item) => {
+                  const status = STATUS[item.appointmentStatus?.toUpperCase()];
+
+                  return (
+                    <tr
+                      key={item.appointmentId}
+                      className="hover:bg-gray-50/70 transition-colors"
+                    >
+                      {/* Fecha y hora.
+                          Hoy SearchItem no trae fecha ni hora: se muestra la fecha
+                          del filtro. Cuando agregues slotDate, startTime y endTime
+                          al DTO, esta celda los usa sola. */}
+                      <td className="px-6 py-4">
+                        <p className="font-bold text-med-primary-900 text-sm">
+                          {formatDate(item.slotDate ?? applied.date)}
+                        </p>
+                        {item.startTime && (
+                          <p className="text-xs text-med-text-muted mt-0.5">
+                            {item.startTime}
+                            {item.endTime && ` – ${item.endTime}`}
+                          </p>
+                        )}
+                      </td>
+
+                      {/* Especialidad y doctor */}
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-med-primary-100 text-med-primary-700 flex items-center justify-center shrink-0">
+                            <AppointmentIcon />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-med-primary-900">
+                              {item.doctor?.specialty?.name}
+                            </p>
+                            <p className="text-xs text-med-text-muted">
+                              {item.doctor?.name}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Paciente y DNI */}
+                      <td className="px-6 py-4">
+                        <p className="font-semibold text-med-text-main">
+                          {item.patient?.fullName}
+                        </p>
+                        <p className="text-xs text-med-text-muted mt-0.5">
+                          DNI: {Number(item.patient?.dni).toLocaleString('es-AR')}
+                        </p>
+                      </td>
+
+                      {/* Estado */}
+                      <td className="px-6 py-4 text-center">
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
+                            status?.badge ?? 'bg-gray-100 text-gray-600'
+                          }`}
+                        >
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              status?.dot ?? 'bg-gray-400'
+                            }`}
+                          />
+                          {status?.label ?? item.appointmentStatus}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
             </tbody>
           </table>
         </div>
 
-        {/* Paginador inferior normalizado */}
-        <div className="p-4 bg-med-primary-50/50 border-t border-med-border flex items-center justify-between text-xs text-med-text-muted">
-          <span>Mostrando 3 de 42 registros</span>
-          <div className="flex items-center gap-1">
-            <button className="px-2.5 py-1 border border-med-border rounded bg-white text-med-text-sub hover:bg-gray-50">
-              ‹
-            </button>
-            <button className="px-2.5 py-1 border border-med-border rounded bg-white text-med-text-sub hover:bg-gray-50">
-              ›
-            </button>
-          </div>
-        </div>
+        {!error && (
+          <TablePagination
+            currentPage={page}
+            totalPages={Math.max(1, Math.ceil(total / PAGE_SIZE))}
+            totalItems={total}
+            pageSize={PAGE_SIZE}
+            onPageChange={setPage}
+          />
+        )}
       </Card>
     </div>
   );
