@@ -78,7 +78,9 @@ function DoctorRow({ doctor, onDelete }) {
             title="Editar profesional"
             aria-label={`Editar a ${doctor.name}`}
             className={ACTION_BUTTON}
-            onClick={() => navigate(`/admin/doctors/${doctor.id}/edit`)}
+            onClick={() =>
+              navigate(`/admin/doctors/${doctor.id}/edit`, { state: { doctor } })
+            }
           >
             <PencilIcon />
           </button>
