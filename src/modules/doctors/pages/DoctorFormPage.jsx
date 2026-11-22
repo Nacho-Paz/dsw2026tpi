@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Card from '../../shared/components/Card';
 import Button from '../../shared/components/Button';
 import { createDoctor } from '../services/doctorService';
-import { getAllSpecialties } from '../../specialties/services/SpecialtiesService';
+import { getAllSpecialties } from '../../specialties/services/SpecialtiesService'; //TODO
 
 const FIELD =
   'w-full px-3 py-2 text-sm bg-white border border-med-border rounded-lg text-med-text-main focus:outline-none focus:ring-1 focus:ring-med-primary-600';
@@ -113,7 +113,7 @@ function DoctorFormPage() {
             <option key={s.id} value={s.id}>{s.name}</option>
               ))}
             </select>
-            
+
             {errors.specialtyId && <span className="text-xs font-normal text-med-danger-text">{errors.specialtyId}</span>}
           </label>
 
