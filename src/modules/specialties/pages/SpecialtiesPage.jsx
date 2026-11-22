@@ -123,7 +123,6 @@ if (
 }
 
   if (editingId !== null) {
-    // Estamos editando una especialidad existente
     setSpecialtiesList((currentList) =>
       currentList.map((spec) =>
         spec.id === editingId
@@ -150,7 +149,6 @@ if (
     ]);
   }
 
-  // Limpiamos el formulario
   setName('');
   setDescription('');
   setEditingId(null);
@@ -194,6 +192,8 @@ const handleDeleteSpecialty = (id) => {
 
   return (
     <div className="flex flex-col gap-6">
+     {/* Cabecera con Título, Buscador y Botón */}
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-med-text-main">
@@ -206,6 +206,7 @@ const handleDeleteSpecialty = (id) => {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
+           {/* Buscador */}
           <div className="relative min-w-[240px] flex-1 sm:flex-initial">
             <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-med-text-muted">
               <svg
@@ -231,7 +232,8 @@ const handleDeleteSpecialty = (id) => {
             />
           </div>
 
-          {/* Botón Nueva Especialidad */}
+        {/* Botón Nueva Especialidad */}
+
           <Button
            onClick={() => {
            setEditingId(null);
@@ -247,8 +249,8 @@ const handleDeleteSpecialty = (id) => {
         </div>
       </div>
 
+            
 
-      /* Formulario para crear una especialidad */
       {showForm && (
         <Card className="p-5 border-med-border">
           <h2 className="text-lg font-bold text-med-primary-900 mb-4">
@@ -313,8 +315,7 @@ const handleDeleteSpecialty = (id) => {
         </Card>
       )}
 
-
-      /* Tabla Principal de Especialidades */
+      {/* Tabla Principal de Especialidades */}
       <Card className="p-0 overflow-hidden border-med-border">
         <div className="p-5 border-b border-med-border">
           <h2 className="text-base font-bold text-med-primary-900">
@@ -337,6 +338,8 @@ const handleDeleteSpecialty = (id) => {
                   key={spec.id}
                   className="hover:bg-gray-50/70 transition-colors"
                 >
+                 {/* Nombre con icono en caja celeste */}
+
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-med-primary-100 text-med-primary-700 flex items-center justify-center shrink-0">
@@ -347,13 +350,15 @@ const handleDeleteSpecialty = (id) => {
                       </span>
                     </div>
                   </td>
+                
+                
+                {/* Descripción */}
 
-                  {/* Descripción */}
                   <td className="px-6 py-4 text-med-text-sub max-w-md">
                     {spec.description}
                   </td>
-
-                  {/* Estado (Active / Inactive) */}
+                  
+                 {/* Estado (Active / Inactive) */}
                   <td className="px-6 py-4 text-center">
                     {spec.status === 'Active' ? (
                       <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-med-active-bg text-med-active-text">
@@ -366,7 +371,8 @@ const handleDeleteSpecialty = (id) => {
                     )}
                   </td>
 
-                  {/* Acciones: Editar y Eliminar */}
+                 {/* Acciones: Editar y Eliminar */}
+
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2 text-med-text-muted">
                       <button
