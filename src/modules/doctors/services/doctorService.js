@@ -1,5 +1,4 @@
 import { instance } from '../../shared/api/axiosInstance';
-import { toPageIndex } from '../../shared/helpers/pagination';
 
 // Si en .env.development.local ponés VITE_USE_MOCK=true, el servicio usa datos
 // de prueba y no necesita el back. Sin esa variable, llama a la API real.
@@ -50,8 +49,7 @@ let mockDoctors = [
 // GET /api/doctors?pageSize=&pageIndex=&name=
 // Respuesta (PaginatedResponse): { pageSize, pageIndex, total, data: [...] }
 // Cada doctor: { id, name, licenseNumber, specialty: { specialtyId, name } }
-// "page" empieza en 1 (como TablePagination); toPageIndex lo convierte al
-// pageIndex que espera el back.
+// "page" empieza en 1 (como TablePagination) y se envía directamente como pageIndex.
 export const getDoctors = async ({ name, page = 1, pageSize = 10 } = {}) => {
   if (USE_MOCK) {
     await wait(500); // simula la demora de la red para ver "Cargando..."
@@ -62,7 +60,7 @@ export const getDoctors = async ({ name, page = 1, pageSize = 10 } = {}) => {
     const start = (page - 1) * pageSize;
     return {
       pageSize,
-      pageIndex: toPageIndex(page),
+      pageIndex: page,
       total: filtered.length,
       data: filtered.slice(start, start + pageSize),
     };
@@ -71,7 +69,7 @@ export const getDoctors = async ({ name, page = 1, pageSize = 10 } = {}) => {
   const res = await instance.get('/api/doctors', {
     params: {
       pageSize,
-      pageIndex: toPageIndex(page),
+      pageIndex: page,
       name: name || undefined,
     },
   });
