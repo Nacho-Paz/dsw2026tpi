@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Card from '../../shared/components/Card';
 import Button from '../../shared/components/Button';
+import TablePagination from '../../shared/components/TablePagination';
 import DoctorRow from '../components/DoctorRow';
 import { ClockIcon, SearchIcon } from '../components/DoctorIcons';
 import {
@@ -9,6 +10,7 @@ import {
   MIN_SEARCH_LENGTH,
   useDoctors,
 } from '../hooks/useDoctors';
+import Modal from '../../shared/components/Modal';
 
 const TABLE_COLUMNS = 4;
 
@@ -28,6 +30,8 @@ function TableMessage({ children }) {
 function DoctorsPage() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const [doctorToDelete, setDoctorToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   const {
     doctors,
     total,
@@ -35,13 +39,22 @@ function DoctorsPage() {
     error,
     notice,
     searchTooShort,
+    page,
+    setPage,
+    pageSize,
     reload,
     removeDoctor,
   } = useDoctors(searchTerm);
 
-  const handleDelete = (doctor) => {
-    if (!window.confirm(`¿Eliminar a ${doctor.name}?`)) return;
-    removeDoctor(doctor.id);
+  const closeDeleteModal = () => {
+    if (!deleting) setDoctorToDelete(null);
+  };
+
+  const confirmDelete = async () => {
+    setDeleting(true);
+    await removeDoctor(doctorToDelete.id); // el hook ya maneja error y notice
+    setDeleting(false);
+    setDoctorToDelete(null);
   };
 
   const isEmpty = !loading && !error && doctors.length === 0;
@@ -159,19 +172,52 @@ function DoctorsPage() {
                   <DoctorRow
                     key={doctor.id}
                     doctor={doctor}
-                    onDelete={handleDelete}
+                    onDelete={setDoctorToDelete}
                   />
                 ))}
             </tbody>
           </table>
         </div>
 
-        <div className="p-4 bg-med-primary-50/50 border-t border-med-border text-xs text-med-text-muted">
-          <span>
-            Mostrando {loading ? 0 : doctors.length} de {total} registros
-          </span>
-        </div>
+        <TablePagination
+          currentPage={page}
+          totalItems={total}
+          pageSize={pageSize}
+          disabled={loading}
+          onPageChange={setPage}
+        />
       </Card>
+      <Modal
+  isOpen={doctorToDelete !== null}
+  onClose={closeDeleteModal}
+  title="Confirmar eliminación"
+      >
+        <div className="flex flex-col gap-5">
+          <p className="text-sm text-med-text-sub">
+            ¿Estás seguro de que querés eliminar a{' '}
+            <span className="font-semibold text-med-text-main">
+              {doctorToDelete?.name}
+            </span>
+            ?
+          </p>
+          <div className="flex justify-end gap-3">
+            <Button
+              variant="outline"
+              onClick={closeDeleteModal}
+              disabled={deleting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={confirmDelete}
+              disabled={deleting}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {deleting ? 'Eliminando...' : 'Eliminar'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

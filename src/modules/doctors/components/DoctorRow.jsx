@@ -14,27 +14,17 @@ const getInitials = (name) =>
 const ACTION_BUTTON =
   'p-1.5 rounded-lg hover:bg-med-primary-50 text-med-primary-600 hover:text-med-primary-900 transition';
 
-function StatusBadge({ active }) {
-  if (active) {
-    return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-med-active-bg text-med-active-text">
-        <span className="w-1.5 h-1.5 rounded-full bg-med-active-text" />
-        Active
-      </span>
-    );
-  }
-
+function StatusBadge() {
   return (
-    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-med-danger-bg text-med-danger-text">
-      <span className="w-1.5 h-1.5 rounded-full bg-med-danger-text" />
-      On Leave
+    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-med-active-bg text-med-active-text">
+      <span className="w-1.5 h-1.5 rounded-full bg-med-active-text" />
+      Activo
     </span>
   );
 }
 
 function DoctorRow({ doctor, onDelete }) {
   const navigate = useNavigate();
-  const isActive = doctor.statusType === 'active';
 
   return (
     <tr className="hover:bg-gray-50/70 transition-colors">
@@ -48,18 +38,14 @@ function DoctorRow({ doctor, onDelete }) {
                 </span>
               )}
             </div>
-            <span
-              className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white ${
-                isActive ? 'bg-emerald-500' : 'bg-rose-500'
-              }`}
-            />
+            <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white bg-emerald-500" />
           </div>
           <div>
             <p className="font-semibold text-med-primary-900 leading-tight">
               {doctor.name}
             </p>
             <p className="text-xs text-med-text-muted mt-0.5">
-              ID: {doctor.id}
+              Matrícula: {doctor.licenseNumber}
             </p>
           </div>
         </div>
@@ -72,7 +58,7 @@ function DoctorRow({ doctor, onDelete }) {
       </td>
 
       <td className="px-6 py-4 text-center">
-        <StatusBadge active={isActive} />
+        <StatusBadge />
       </td>
 
       <td className="px-6 py-4 text-right">
@@ -92,7 +78,9 @@ function DoctorRow({ doctor, onDelete }) {
             title="Editar profesional"
             aria-label={`Editar a ${doctor.name}`}
             className={ACTION_BUTTON}
-            onClick={() => navigate(`/admin/doctors/${doctor.id}/edit`)}
+            onClick={() =>
+              navigate(`/admin/doctors/${doctor.id}/edit`, { state: { doctor } })
+            }
           >
             <PencilIcon />
           </button>
