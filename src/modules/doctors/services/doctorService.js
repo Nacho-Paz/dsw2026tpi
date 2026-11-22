@@ -107,3 +107,22 @@ export async function createDoctor({ name, licenseNumber, specialtyId }) {
   });
   return data;
 }
+
+export async function updateDoctor(id, { name, licenseNumber, specialtyId }) {
+  if (USE_MOCK) {
+    await wait(300);
+    const specialty = mockSpecialties.find(
+      (s) => s.specialtyId === specialtyId
+    ) ?? { specialtyId, name: 'Sin especialidad' };
+    const updated = { id, name, licenseNumber, specialty };
+    mockDoctors = mockDoctors.map((d) => (d.id === id ? updated : d));
+    return updated;
+  }
+
+  const { data } = await instance.put(`/api/doctors/${id}`, {
+    name,
+    licenseNumber,
+    specialtyId,
+  });
+  return data;
+}
