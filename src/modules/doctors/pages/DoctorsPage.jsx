@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Card from '../../shared/components/Card';
 import Button from '../../shared/components/Button';
+import TablePagination from '../../shared/components/TablePagination';
 import DoctorRow from '../components/DoctorRow';
 import { ClockIcon, SearchIcon } from '../components/DoctorIcons';
 import {
@@ -35,6 +36,9 @@ function DoctorsPage() {
     error,
     notice,
     searchTooShort,
+    page,
+    setPage,
+    pageSize,
     reload,
     removeDoctor,
   } = useDoctors(searchTerm);
@@ -166,11 +170,13 @@ function DoctorsPage() {
           </table>
         </div>
 
-        <div className="p-4 bg-med-primary-50/50 border-t border-med-border text-xs text-med-text-muted">
-          <span>
-            Mostrando {loading ? 0 : doctors.length} de {total} registros
-          </span>
-        </div>
+        <TablePagination
+          currentPage={page}
+          totalItems={total}
+          pageSize={pageSize}
+          disabled={loading}
+          onPageChange={setPage}
+        />
       </Card>
     </div>
   );
