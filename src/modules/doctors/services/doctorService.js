@@ -90,7 +90,17 @@ export const deleteDoctor = async (id) => {
 };
 
 export async function createDoctor({ name, licenseNumber, specialtyId }) {
-  const { data } = await instance.post('/doctors', {
+  if (USE_MOCK) {
+    await wait(300);
+    const specialty = mockSpecialties.find(
+      (s) => s.specialtyId === specialtyId
+    ) ?? { specialtyId, name: 'Sin especialidad' };
+    const doctor = { id: `m${Date.now()}`, name, licenseNumber, specialty };
+    mockDoctors = [doctor, ...mockDoctors];
+    return doctor;
+  }
+
+  const { data } = await instance.post('/api/doctors', {
     name,
     licenseNumber,
     specialtyId,
