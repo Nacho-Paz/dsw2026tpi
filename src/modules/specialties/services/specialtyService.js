@@ -22,3 +22,25 @@ export async function getSpecialties() {
     id: specialty.id ?? specialty.specialtyId,
   }));
 }
+
+export async function createSpecialty({ name, description }) {
+  const { data } = await instance.post('/api/specialties', {
+    name,
+    description,
+  });
+
+  return data;
+}
+
+export async function updateSpecialty(id, { name, description }) {
+  const { data } = await instance.put(`/api/specialties/${id}`, {
+    name,
+    description,
+  });
+
+  return data;
+}
+
+export async function deleteSpecialty(id) {
+  await instance.delete(`/api/specialties/${id}`);
+}

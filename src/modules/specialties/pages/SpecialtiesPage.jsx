@@ -1,4 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import {
+  createSpecialty,
+  deleteSpecialty,
+  getSpecialties,
+  updateSpecialty,
+} from '../services/specialtyService';
 import Card from '../../../shared/components/Card';
 import Button from '../../../shared/components/Button';
 
@@ -9,190 +15,115 @@ function SpecialtiesPage() {
   const [description, setDescription] = useState('');
   const [editingId, setEditingId] = useState(null);
 
-    
+  const [specialtiesList, setSpecialtiesList] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
 
-   const [specialtiesList, setSpecialtiesList] = useState([
-     {
-      id: 1,
-      name: 'Cardiología',
-      description:
-        'Estudio y tratamiento de trastornos del corazón y del sistema circulatorio.',
-      status: 'Active',
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="1.75"
-            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-          />
-        </svg>
-      ),
-    },
-    {
-      id: 2,
-      name: 'Neurología',
-      description:
-        'Diagnóstico y tratamiento de todas las categorías de afecciones cerebrales.',
-      status: 'Active',
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="1.75"
-            d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-          />
-        </svg>
-      ),
-    },
-    {
-      id: 3,
-      name: 'Dermatología',
-      description:
-        'Atención integral de enfermedades de la piel, uñas y cabello.',
-      status: 'Inactive',
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="1.75"
-            d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
-          />
-        </svg>
-      ),
-    },
-    {
-      id: 4,
-      name: 'Pediatría',
-      description: 'Cuidado médico de lactantes, niños y adolescentes.',
-      status: 'Active',
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="1.75"
-            d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-      ),
-    },
-  ]);
+  const loadSpecialties = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      setSpecialtiesList(await getSpecialties());
+    } catch (err) {
+      setError(
+        err.response?.data?.message ??
+          'No se pudieron cargar las especialidades.'
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
+    loadSpecialties();
+  }, []);
 
- 
-const handleCreateSpecialty = (e) => {
-  e.preventDefault();
+  const handleCreateSpecialty = async (e) => {
+    e.preventDefault();
+    const trimmedName = name.trim();
+    const trimmedDescription = description.trim();
 
-const trimmedName = name.trim();
-const trimmedDescription = description.trim();
+    if (trimmedName.length < 3 || trimmedName.length > 100) {
+      setError('El nombre debe tener entre 3 y 100 caracteres.');
 
-if (trimmedName.length < 3 || trimmedName.length > 100) {
-  alert('El nombre debe tener entre 3 y 100 caracteres.');
-  return;
-}
+      return;
+    }
 
-if (
-  trimmedDescription.length < 10 ||
-  trimmedDescription.length > 100
-) {
-  alert('La descripción debe tener entre 10 y 100 caracteres.');
-  return;
-}
+    if (trimmedDescription.length < 10 || trimmedDescription.length > 100) {
+      setError('La descripción debe tener entre 10 y 100 caracteres.');
 
-  if (editingId !== null) {
-    setSpecialtiesList((currentList) =>
-      currentList.map((spec) =>
-        spec.id === editingId
-          ? {
-              ...spec,
-              name: name.trim(),
-              description: description.trim(),
-            }
-          : spec
-      )
-    );
-  } else {
-    // Estamos creando una especialidad nueva
-    const newSpecialty = {
-      id: Date.now(),
-      name: name.trim(),
-      description: description.trim(),
-      status: 'Active',
-    };
+      return;
+    }
 
-    setSpecialtiesList((currentList) => [
-      ...currentList,
-      newSpecialty,
-    ]);
-  }
+    setSaving(true);
+    setError('');
+    try {
+      if (editingId)
+        await updateSpecialty(editingId, {
+          name: trimmedName,
+          description: trimmedDescription,
+        });
+      else
+        await createSpecialty({
+          name: trimmedName,
+          description: trimmedDescription,
+        });
 
-  setName('');
-  setDescription('');
-  setEditingId(null);
-  setShowForm(false);
-};
+      await loadSpecialties();
+      setName('');
+      setDescription('');
+      setEditingId(null);
+      setShowForm(false);
+    } catch (err) {
+      setError(
+        err.response?.data?.message ?? 'No se pudo guardar la especialidad.'
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
 
-const handleEditSpecialty = (spec) => {
-  setEditingId(spec.id);
-  setName(spec.name);
-  setDescription(spec.description);
-  setShowForm(true);
-};
+  const handleEditSpecialty = (spec) => {
+    setEditingId(spec.id);
+    setName(spec.name);
+    setDescription(spec.description);
+    setShowForm(true);
+  };
 
+  const handleDeleteSpecialty = async (id) => {
+    if (
+      !window.confirm('¿Estás segura de que querés eliminar esta especialidad?')
+    )
+      return;
 
-const handleDeleteSpecialty = (id) => {
-  const confirmDelete = window.confirm(
-    '¿Estás segura de que querés eliminar esta especialidad?'
-  );
+    setError('');
+    try {
+      await deleteSpecialty(id);
+      await loadSpecialties();
 
-  if (!confirmDelete) {
-    return;
-  }
-
-  setSpecialtiesList((currentList) =>
-    currentList.filter((spec) => spec.id !== id)
-  );
-
-  if (editingId === id) {
-    setEditingId(null);
-    setName('');
-    setDescription('');
-    setShowForm(false);
-  }
-};
+      if (editingId === id) {
+        setEditingId(null);
+        setName('');
+        setDescription('');
+        setShowForm(false);
+      }
+    } catch (err) {
+      setError(
+        err.response?.data?.message ?? 'No se pudo eliminar la especialidad.'
+      );
+    }
+  };
 
   const filteredSpecialties = specialtiesList.filter((item) =>
-  searchTerm.trim().length < 3
-    ? true
-    : item.name.toLowerCase().includes(searchTerm.trim().toLowerCase())
-);
+    searchTerm.trim().length < 3
+      ? true
+      : item.name.toLowerCase().includes(searchTerm.trim().toLowerCase())
+  );
 
   return (
     <div className="flex flex-col gap-6">
-     {/* Cabecera con Título, Buscador y Botón */}
+      {/* Cabecera con Título, Buscador y Botón */}
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -206,7 +137,7 @@ const handleDeleteSpecialty = (id) => {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-           {/* Buscador */}
+          {/* Buscador */}
           <div className="relative min-w-[240px] flex-1 sm:flex-initial">
             <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-med-text-muted">
               <svg
@@ -232,15 +163,15 @@ const handleDeleteSpecialty = (id) => {
             />
           </div>
 
-        {/* Botón Nueva Especialidad */}
+          {/* Botón Nueva Especialidad */}
 
           <Button
-           onClick={() => {
-           setEditingId(null);
-           setName('');
-           setDescription('');
-           setShowForm(true);
-          }}
+            onClick={() => {
+              setEditingId(null);
+              setName('');
+              setDescription('');
+              setShowForm(true);
+            }}
             className="flex items-center gap-1.5 bg-med-primary-900 hover:bg-med-primary-800 text-white font-medium"
           >
             <span>+</span>
@@ -249,12 +180,16 @@ const handleDeleteSpecialty = (id) => {
         </div>
       </div>
 
-            
+      {error && (
+        <p role="alert" className="text-sm text-red-700">
+          {error}
+        </p>
+      )}
 
       {showForm && (
         <Card className="p-5 border-med-border">
           <h2 className="text-lg font-bold text-med-primary-900 mb-4">
-             {editingId !== null ? 'Editar Especialidad' : 'Nueva Especialidad'}
+            {editingId !== null ? 'Editar Especialidad' : 'Nueva Especialidad'}
           </h2>
 
           <form
@@ -294,12 +229,12 @@ const handleDeleteSpecialty = (id) => {
             <div className="flex justify-end gap-2">
               <button
                 type="button"
-               onClick={() => {
-               setShowForm(false);
-               setEditingId(null);
-               setName('');
-               setDescription('');
-              }}
+                onClick={() => {
+                  setShowForm(false);
+                  setEditingId(null);
+                  setName('');
+                  setDescription('');
+                }}
                 className="px-4 py-2 rounded-lg border border-med-border text-med-text-sub hover:bg-gray-100"
               >
                 Cancelar
@@ -309,7 +244,12 @@ const handleDeleteSpecialty = (id) => {
                 type="submit"
                 className="bg-med-primary-900 hover:bg-med-primary-800 text-white"
               >
-                {editingId !== null ? 'Guardar cambios' : 'Guardar especialidad'}              </Button>
+                {saving
+                  ? 'Guardando...'
+                  : editingId
+                    ? 'Guardar cambios'
+                    : 'Guardar especialidad'}{' '}
+              </Button>
             </div>
           </form>
         </Card>
@@ -333,95 +273,110 @@ const handleDeleteSpecialty = (id) => {
               </tr>
             </thead>
             <tbody className="divide-y divide-med-border-subtle">
-              {filteredSpecialties.map((spec) => (
-                <tr
-                  key={spec.id}
-                  className="hover:bg-gray-50/70 transition-colors"
-                >
-                 {/* Nombre con icono en caja celeste */}
-
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-med-primary-100 text-med-primary-700 flex items-center justify-center shrink-0">
-                        {spec.icon}
-                      </div>
-                      <span className="font-semibold text-med-primary-900">
-                        {spec.name}
-                      </span>
-                    </div>
-                  </td>
-                
-                
-                {/* Descripción */}
-
-                  <td className="px-6 py-4 text-med-text-sub max-w-md">
-                    {spec.description}
-                  </td>
-                  
-                 {/* Estado (Active / Inactive) */}
-                  <td className="px-6 py-4 text-center">
-                    {spec.status === 'Active' ? (
-                      <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-med-active-bg text-med-active-text">
-                        Active
-                      </span>
-                    ) : (
-                      <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-500">
-                        Inactive
-                      </span>
-                    )}
-                  </td>
-
-                 {/* Acciones: Editar y Eliminar */}
-
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2 text-med-text-muted">
-                      <button
-                        title="Editar especialidad"
-                        className="p-1.5 rounded-lg hover:bg-med-primary-50 text-med-text-muted hover:text-med-primary-900 transition"
-                        onClick={() => handleEditSpecialty(spec)}                      >
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                          />
-                        </svg>
-                      </button>
-
-                      <button
-                        title="Eliminar especialidad"
-                        className="p-1.5 rounded-lg hover:bg-red-50 text-med-danger-text transition"
-                        onClick={() => handleDeleteSpecialty(spec.id)}>
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                          />
-                        </svg>
-                      </button>
-                    </div>
+              {loading ? (
+                <tr>
+                  <td className="px-6 py-4" colSpan="4">
+                    Cargando especialidades...
                   </td>
                 </tr>
-              ))}
+              ) : filteredSpecialties.length === 0 ? (
+                <tr>
+                  <td className="px-6 py-4" colSpan="4">
+                    No hay especialidades para mostrar.
+                  </td>
+                </tr>
+              ) : (
+                filteredSpecialties.map((spec) => (
+                  <tr
+                    key={spec.id}
+                    className="hover:bg-gray-50/70 transition-colors"
+                  >
+                    {/* Nombre con icono en caja celeste */}
+
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-med-primary-100 text-med-primary-700 flex items-center justify-center shrink-0">
+                          {spec.icon}
+                        </div>
+                        <span className="font-semibold text-med-primary-900">
+                          {spec.name}
+                        </span>
+                      </div>
+                    </td>
+
+                    {/* Descripción */}
+
+                    <td className="px-6 py-4 text-med-text-sub max-w-md">
+                      {spec.description}
+                    </td>
+
+                    {/* Estado (Active / Inactive) */}
+                    <td className="px-6 py-4 text-center">
+                      {spec.status === 'Active' ? (
+                        <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-med-active-bg text-med-active-text">
+                          Active
+                        </span>
+                      ) : (
+                        <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-500">
+                          Inactive
+                        </span>
+                      )}
+                    </td>
+
+                    {/* Acciones: Editar y Eliminar */}
+
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2 text-med-text-muted">
+                        <button
+                          title="Editar especialidad"
+                          className="p-1.5 rounded-lg hover:bg-med-primary-50 text-med-text-muted hover:text-med-primary-900 transition"
+                          onClick={() => handleEditSpecialty(spec)}
+                        >
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                            />
+                          </svg>
+                        </button>
+
+                        <button
+                          title="Eliminar especialidad"
+                          className="p-1.5 rounded-lg hover:bg-red-50 text-med-danger-text transition"
+                          onClick={() => handleDeleteSpecialty(spec.id)}
+                        >
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
 
         <div className="p-4 bg-med-primary-50/50 border-t border-med-border flex items-center justify-between text-xs text-med-text-muted">
-          <span>Mostrando 4 de 32 registros</span>
+          <span>Mostrando {filteredSpecialties.length} especialidades</span>
           <div className="flex items-center gap-1">
             <button className="px-2.5 py-1 border border-med-border rounded bg-white text-med-text-sub hover:bg-gray-50">
               ‹
