@@ -1,5 +1,4 @@
 import { createContext, useState } from 'react';
-import { login } from '../services/login';
 import { loginAdmin } from '../services/adminLogin';
 import { loginPatient } from '../services/patientLogin';
 
@@ -8,74 +7,46 @@ const AuthContext = createContext();
 function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role');
 
-    return Boolean(token);
+    return Boolean(token && role);
   });
+  const [role, setRole] = useState(() => localStorage.getItem('role'));
 
   const singout = () => {
-    localStorage.clear();
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
     setIsAuthenticated(false);
+    setRole(null);
   };
 
-  const setAuthSession = (token) => {
+  const setAuthSession = (token, userRole) => {
     localStorage.setItem('token', token);
+    localStorage.setItem('role', userRole);
     setIsAuthenticated(true);
+    setRole(userRole);
   };
 
-  const singin = async (username, password) => {
-    const { data, error } = await login(username, password);
+  const singinAdmin = async (email, password) => {
+    const { data, error } = await loginAdmin(email, password);
 
     if (error) {
       return { error };
     }
 
-    setAuthSession(data);
+    setAuthSession(data.token, data.role);
 
     return { error: null };
   };
 
-  const singinAdmin = async (username, password) => {
-    if (
-      (username === 'admin' ||
-        username === 'admin@medportal.com' ||
-        username === 'admin@test.com') &&
-      password === 'admin123'
-    ) {
-      setAuthSession('mock-admin-token-12345');
-
-      return { error: null };
-    }
-
-    const { data, error } = await loginAdmin(username, password);
+  const singinPatient = async (email, dni) => {
+    const { data, error } = await loginPatient(email, dni);
 
     if (error) {
       return { error };
     }
 
-    setAuthSession(data);
-
-    return { error: null };
-  };
-
-  const singinPatient = async (username, password) => {
-    if (
-      (username === 'paciente' ||
-        username === 'paciente@medportal.com' ||
-        username === 'paciente@test.com') &&
-      password === 'paciente123'
-    ) {
-      setAuthSession('mock-patient-token-67890');
-
-      return { error: null };
-    }
-
-    const { data, error } = await loginPatient(username, password);
-
-    if (error) {
-      return { error };
-    }
-
-    setAuthSession(data);
+    setAuthSession(data.token, data.role);
 
     return { error: null };
   };
@@ -84,7 +55,7 @@ function AuthProvider({ children }) {
     <AuthContext.Provider
       value={{
         isAuthenticated,
-        singin,
+        role,
         singinAdmin,
         singinPatient,
         singout,
