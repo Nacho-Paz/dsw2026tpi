@@ -31,11 +31,19 @@ function AdminLoginPage() {
 
       navigate('/admin/home');
     } catch (error) {
-      if (error?.response?.data?.code) {
-        setErrorMessage(frontendErrorMessage[error?.response?.data?.code]);
-      } else {
-        setErrorMessage('Error al conectar con el servicio administrativo');
-      }
+      const status = error?.response?.status;
+      const errorCode =
+        error?.response?.data?.ErrorCode ?? error?.response?.data?.code;
+      const errorMessage = frontendErrorMessage[errorCode];
+
+      setErrorMessage(
+        status === 429
+          ? 'Demasiados intentos. Esperá un minuto antes de volver a probar.'
+          : errorMessage ||
+              (error?.response
+                ? 'No se pudo iniciar sesión con esos datos.'
+                : 'Error al conectar con el servicio administrativo')
+      );
     }
   };
 
