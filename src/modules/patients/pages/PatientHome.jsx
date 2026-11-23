@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Card from '../../shared/components/Card';
-import Button from '../../shared/components/Button';
-import { instance } from '../../shared/api/axiosInstance';
-import useAuth from '../../auth/hook/useAuth';
+import Card from '../../../shared/components/Card';
+import Button from '../../../shared/components/Button';
+import { instance } from '../../../shared/services/axiosInstance';
+import useAuth from '../../auth/hooks/useAuth';
 import {
   getDoctors,
   getDoctorAvailabilities,
@@ -406,54 +406,52 @@ function PatientHome() {
                 No hay horarios disponibles para este médico.
               </p>
             ) : (
-              <div className="overflow-x-auto">
-                <div className="grid min-w-[700px] grid-cols-7 gap-2">
-                  {weekDays.map((date) => {
-                    const dateKey = getDateKey(date);
-                    const daySlots = slotsByDate[dateKey] ?? [];
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
+                {weekDays.map((date) => {
+                  const dateKey = getDateKey(date);
+                  const daySlots = slotsByDate[dateKey] ?? [];
 
-                    return (
-                      <section
-                        key={dateKey}
-                        className="min-h-36 rounded-lg border border-med-border bg-white p-2"
-                      >
-                        <div className="mb-2 border-b border-med-border pb-2 text-center">
-                          <p className="text-[10px] font-semibold uppercase text-med-text-muted">
-                            {date.toLocaleDateString('es-AR', {
-                              weekday: 'short',
-                            })}
+                  return (
+                    <section
+                      key={dateKey}
+                      className="min-h-36 rounded-lg border border-med-border bg-white p-2"
+                    >
+                      <div className="mb-2 border-b border-med-border pb-2 text-center">
+                        <p className="text-[10px] font-semibold uppercase text-med-text-muted">
+                          {date.toLocaleDateString('es-AR', {
+                            weekday: 'short',
+                          })}
+                        </p>
+                        <p className="text-sm font-bold text-med-text-main">
+                          {date.getDate()}
+                        </p>
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        {daySlots.length === 0 ? (
+                          <p className="pt-2 text-center text-[10px] text-med-text-muted">
+                            Sin horarios
                           </p>
-                          <p className="text-sm font-bold text-med-text-main">
-                            {date.getDate()}
-                          </p>
-                        </div>
-                        <div className="flex flex-col gap-1.5">
-                          {daySlots.length === 0 ? (
-                            <p className="pt-2 text-center text-[10px] text-med-text-muted">
-                              Sin horarios
-                            </p>
-                          ) : (
-                            daySlots.map((slot) => (
-                              <button
-                                key={slot.id}
-                                type="button"
-                                aria-pressed={slotId === slot.id}
-                                onClick={() => setSlotId(slot.id)}
-                                className={`rounded-md border px-1 py-1.5 text-[11px] font-medium transition ${
-                                  slotId === slot.id
-                                    ? 'border-med-primary-700 bg-med-primary-700 text-white'
-                                    : 'border-med-border text-med-text-main hover:border-med-primary-600 hover:bg-med-primary-50'
-                                }`}
-                              >
-                                {slot.startTime}
-                              </button>
-                            ))
-                          )}
-                        </div>
-                      </section>
-                    );
-                  })}
-                </div>
+                        ) : (
+                          daySlots.map((slot) => (
+                            <button
+                              key={slot.id}
+                              type="button"
+                              aria-pressed={slotId === slot.id}
+                              onClick={() => setSlotId(slot.id)}
+                              className={`rounded-md border px-1 py-1.5 text-[11px] font-medium transition ${
+                                slotId === slot.id
+                                  ? 'border-med-primary-700 bg-med-primary-700 text-white'
+                                  : 'border-med-border text-med-text-main hover:border-med-primary-600 hover:bg-med-primary-50'
+                              }`}
+                            >
+                              {slot.startTime}
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    </section>
+                  );
+                })}
               </div>
             )}
 

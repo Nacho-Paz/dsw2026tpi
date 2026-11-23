@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import Button from '../../shared/components/Button';
+import Button from '../../../shared/components/Button';
 import { getAllDoctors } from '../services/doctorService';
 import { useDoctorAvailability } from '../hooks/useDoctorsAvailability';
 

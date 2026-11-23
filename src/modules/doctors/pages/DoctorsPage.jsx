@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Card from '../../shared/components/Card';
-import Button from '../../shared/components/Button';
-import TablePagination from '../../shared/components/TablePagination';
+import Card from '../../../shared/components/Card';
+import Button from '../../../shared/components/Button';
+import TablePagination from '../../../shared/components/TablePagination';
 import DoctorRow from '../components/DoctorRow';
 import { ClockIcon, SearchIcon } from '../components/DoctorIcons';
 import {
@@ -10,7 +10,7 @@ import {
   MIN_SEARCH_LENGTH,
   useDoctors,
 } from '../hooks/useDoctors';
-import Modal from '../../shared/components/Modal';
+import Modal from '../../../shared/components/Modal';
 
 const TABLE_COLUMNS = 4;
 

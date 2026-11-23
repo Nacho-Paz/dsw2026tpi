@@ -1,5 +1,5 @@
-import { instance } from '../../shared/api/axiosInstance';
-import { toPageIndex } from '../../shared/helpers/pagination';
+import { instance } from '../../../shared/services/axiosInstance';
+import { toPageIndex } from '../../../shared/helpers/pagination';
 import { WEEK_DAYS } from '../constants/weekDays';
 
 // Si en .env.development.local ponés VITE_USE_MOCK=true, el servicio usa datos

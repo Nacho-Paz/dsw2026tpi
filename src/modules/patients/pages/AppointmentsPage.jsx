@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import Card from '../../shared/components/Card';
-import Button from '../../shared/components/Button';
-import { instance } from '../../shared/api/axiosInstance';
-import useAuth from '../../auth/hook/useAuth';
+import Card from '../../../shared/components/Card';
+import Button from '../../../shared/components/Button';
+import { instance } from '../../../shared/services/axiosInstance';
+import useAuth from '../../auth/hooks/useAuth';
 
 function formatDate(value) {
   if (!value) return 'Fecha no disponible';

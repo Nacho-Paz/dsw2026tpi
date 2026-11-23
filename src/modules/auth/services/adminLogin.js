@@ -1,4 +1,4 @@
-import { instance } from '../../shared/api/axiosInstance';
+import { instance } from '../../../shared/services/axiosInstance';
 
 export const loginAdmin = async (email, password) => {
   const response = await instance.post('api/auth/admin/login', {

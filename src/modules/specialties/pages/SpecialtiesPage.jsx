@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import Card from '../../shared/components/Card';
-import Button from '../../shared/components/Button';
+import Card from '../../../shared/components/Card';
+import Button from '../../../shared/components/Button';
 
 function SpecialtiesPage() {
   const [searchTerm, setSearchTerm] = useState('');

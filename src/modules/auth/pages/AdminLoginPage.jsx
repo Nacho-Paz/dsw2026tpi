@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
-import useAuth from '../hook/useAuth';
+import useAuth from '../hooks/useAuth';
 import { frontendErrorMessage } from '../helpers/backendError';
 
 function AdminLoginPage() {
@@ -122,8 +122,11 @@ function AdminLoginPage() {
 
             {/* Contraseña */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-med-text-main">
-                DNI
+              <label
+                htmlFor="admin-password"
+                className="text-xs font-semibold text-med-text-main"
+              >
+                Contraseña
               </label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-med-text-muted">
@@ -142,6 +145,7 @@ function AdminLoginPage() {
                   </svg>
                 </span>
                 <input
+                  id="admin-password"
                   type={showPassword ? 'text' : 'password'}
                   placeholder="••••••••"
                   className={`w-full border rounded-lg pl-10 pr-10 py-2.5 text-sm bg-white text-med-text-main placeholder-med-text-muted focus:outline-none focus:ring-2 focus:ring-med-primary-600 focus:border-transparent ${
@@ -150,14 +154,22 @@ function AdminLoginPage() {
                       : 'border-med-border'
                   }`}
                   {...register('password', {
-                    required: 'El DNI es obligatorio',
+                    required: 'La contraseña es obligatoria',
+                    minLength: {
+                      value: 8,
+                      message: 'La contraseña debe tener al menos 8 caracteres',
+                    },
                   })}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  aria-label={showPassword ? 'Ocultar DNI' : 'Mostrar DNI'}
-                  title={showPassword ? 'Ocultar DNI' : 'Mostrar DNI'}
+                  aria-label={
+                    showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'
+                  }
+                  title={
+                    showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'
+                  }
                   className="absolute inset-y-0 right-0 flex items-center pr-3 text-med-text-muted hover:text-med-text-main"
                 >
                   {showPassword ? (

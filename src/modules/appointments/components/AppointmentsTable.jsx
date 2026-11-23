@@ -1,5 +1,5 @@
-import Card from '../../shared/components/Card';
-import TablePagination from '../../shared/components/TablePagination';
+import Card from '../../../shared/components/Card';
+import TablePagination from '../../../shared/components/TablePagination';
 import AppointmentRow from './AppointmentRow';
 import TableMessage from './TableMessage';
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
-import Card from '../../shared/components/Card';
-import Button from '../../shared/components/Button';
+import Card from '../../../shared/components/Card';
+import Button from '../../../shared/components/Button';
 import { getSpecialties } from '../../specialties/services/specialtyService';
 import { createDoctor, updateDoctor } from '../services/doctorService';
 

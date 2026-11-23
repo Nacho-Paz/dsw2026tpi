@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
-import Button from '../../shared/components/Button';
-import useAuth from '../../auth/hook/useAuth';
-import { frontendErrorMessage } from '../../auth/helpers/backendError';
+import Button from '../../../shared/components/Button';
+import useAuth from '../hooks/useAuth';
+import { frontendErrorMessage } from '../helpers/backendError';
 
 function PatientLoginPage() {
   const [errorMessage, setErrorMessage] = useState('');
@@ -119,11 +119,14 @@ function PatientLoginPage() {
 
           {/* DNI del paciente */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-med-text-main">
-              DNI
+            <label
+              htmlFor="patient-dni"
+              className="text-xs font-semibold text-med-text-main"
+            >
               DNI
             </label>
             <input
+              id="patient-dni"
               type="text"
               inputMode="numeric"
               placeholder="12345678"

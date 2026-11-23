@@ -10,7 +10,7 @@ import ProtectedRoute from './modules/auth/components/ProtectedRoute';
 import AdminLoginPage from './modules/auth/pages/AdminLoginPage';
 
 // Patients Module
-import PatientLoginPage from './modules/patients/pages/PatientLoginPage';
+import PatientLoginPage from './modules/auth/pages/PatientLoginPage';
 import PatientLayout from './modules/patients/components/PatientLayout';
 import PatientHome from './modules/patients/pages/PatientHome';
 import AppointmentsPage from './modules/patients/pages/AppointmentsPage';
