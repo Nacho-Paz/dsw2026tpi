@@ -1,5 +1,6 @@
 using Dsw2026Tpi.Api.Configurations;
 using Dsw2026Tpi.Api.Middlewares;
+using Dsw2026Tpi.Data;
 using Dsw2026Tpi.Data.Identity;
 using Serilog;
 
@@ -20,7 +21,7 @@ public class Program
 
             var builder = WebApplication.CreateBuilder(args);
 
-            //Configuraciones personalizadas
+            // Configuraciones personalizadas
             builder.AddSerilogConfiguration();
             builder.Services.AddAppIdentity();
             builder.Services.AddAppAuthentication(builder.Configuration);
@@ -36,26 +37,44 @@ public class Program
 
             using (var scope = app.Services.CreateScope())
             {
-                await IdentitySeeder.SeedAsync(scope.ServiceProvider);
+                var services = scope.ServiceProvider;
+
+                // Administrador inicial / roles
+                await IdentitySeeder.SeedAsync(services);
+
+                // Seeding de prueba para frontend solo en desarrollo
+                if (app.Environment.IsDevelopment())
+                {
+                    var jsonPath = Path.Combine(app.Environment.ContentRootPath, "seedData.json");
+                    if (File.Exists(jsonPath))
+                    {
+                        await DataSeeder.SeedFromJsonAsync(services, jsonPath);
+                    }
+                    else
+                    {
+                        Log.Warning("No se encontró {SeedFilePath}; se omite DataSeeder", jsonPath);
+                    }
+                }
             }
 
+            app.UseMiddleware<ExceptionHandlingMiddleware>();
             app.UseSerilogRequestLogging();
 
             if (app.Environment.IsProduction())
             {
                 app.UseHttpsRedirection();
             }
+
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
 
+            app.UseCors();
             app.UseAuthentication();
             app.UseAuthorization();
             app.UseRateLimiter();
-            app.UseCors();
-            app.UseMiddleware<ExceptionHandlingMiddleware>();
 
             app.MapControllers();
             app.MapHealthChecks("/health-check");
