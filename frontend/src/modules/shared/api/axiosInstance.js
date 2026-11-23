@@ -23,10 +23,15 @@ instance.interceptors.response.use(
     return config;
   },
   (error) => {
-    if (error.status === 401) {
-      if (window.location.pathname.includes('/admin/')) {
-        localStorage.clear();
-        window.location.href = '/login';
+    if (error.response?.status === 401) {
+      const pathname = window.location.pathname;
+
+      if (
+        pathname.includes('/admin/') &&
+        !pathname.startsWith('/admin/login')
+      ) {
+        localStorage.removeItem('token');
+        window.location.href = '/admin/login';
       } else {
         localStorage.removeItem('token');
       }
