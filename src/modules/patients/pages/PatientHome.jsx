@@ -4,10 +4,17 @@ import Card from '../../shared/components/Card';
 import Button from '../../shared/components/Button';
 import { instance } from '../../shared/api/axiosInstance';
 import useAuth from '../../auth/hook/useAuth';
+import {
+  getDoctors,
+  getDoctorAvailabilities,
+} from '../../doctors/services/doctorService';
+import { getSpecialties } from '../../specialties/services/specialtyService';
 
 function PatientHome() {
   const navigate = useNavigate();
   const { patientDni } = useAuth();
+  const [specialties, setSpecialties] = useState([]);
+  const [specialtyId, setSpecialtyId] = useState('');
   const [doctors, setDoctors] = useState([]);
   const [doctorId, setDoctorId] = useState('');
   const [rules, setRules] = useState([]);
@@ -19,36 +26,69 @@ function PatientHome() {
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  useEffect(() => {
-    const loadDoctors = async () => {
-      try {
-        const response = await instance.get('api/doctors', {
-          params: { pageSize: 100, pageIndex: 0 },
-        });
+  const filteredDoctors = useMemo(
+    () =>
+      doctors.filter(
+        (doctor) =>
+          String(doctor.specialty?.specialtyId ?? doctor.specialty?.id) ===
+          String(specialtyId)
+      ),
+    [doctors, specialtyId]
+  );
 
-        const list = response.data?.data ?? response.data?.items ?? [];
-        setDoctors(list);
-        if (list.length > 0) setDoctorId(list[0].id);
+  useEffect(() => {
+    const loadCatalogs = async () => {
+      try {
+        const [specialtyList, doctorPage] = await Promise.all([
+          getSpecialties(),
+          getDoctors({ page: 1, pageSize: 100 }),
+        ]);
+        const doctorList = doctorPage.data ?? [];
+        const firstSpecialty =
+          specialtyList.find((specialty) =>
+            doctorList.some(
+              (doctor) =>
+                String(
+                  doctor.specialty?.specialtyId ?? doctor.specialty?.id
+                ) === String(specialty.id)
+            )
+          ) ?? specialtyList[0];
+
+        setSpecialties(specialtyList);
+        setDoctors(doctorList);
+        setSpecialtyId(firstSpecialty?.id ?? '');
+        setDoctorId(
+          doctorList.find(
+            (doctor) =>
+              String(doctor.specialty?.specialtyId ?? doctor.specialty?.id) ===
+              String(firstSpecialty?.id)
+          )?.id ?? ''
+        );
       } catch (error) {
         setErrorMessage(
           error?.response?.status === 403
-            ? 'El backend todavía no permite que los pacientes consulten médicos.'
+            ? 'El backend todavía no permite consultar especialidades y médicos.'
             : error?.response?.data?.message ||
-                'No se pudieron cargar los médicos.'
+                'No se pudieron cargar las especialidades y los médicos.'
         );
       } finally {
         setLoadingDoctors(false);
       }
     };
 
-    loadDoctors();
+    loadCatalogs();
   }, []);
 
   useEffect(() => {
     if (!doctorId) {
       setRules([]);
+      setSlotId('');
+      setLoadingSlots(false);
+
       return;
     }
+
+    let ignore = false;
 
     const loadAvailability = async () => {
       setLoadingSlots(true);
@@ -56,23 +96,28 @@ function PatientHome() {
       setErrorMessage('');
 
       try {
-        const response = await instance.get(
-          `api/doctors/${doctorId}/availabilities`
-        );
-        setRules(Array.isArray(response.data) ? response.data : []);
+        const availability = await getDoctorAvailabilities(doctorId);
+
+        if (!ignore) setRules(availability);
       } catch (error) {
-        setErrorMessage(
-          error?.response?.status === 403
-            ? 'El backend todavía no permite que los pacientes consulten disponibilidades.'
-            : error?.response?.data?.message ||
-                'No se pudieron cargar las disponibilidades.'
-        );
+        if (!ignore) {
+          setErrorMessage(
+            error?.response?.status === 403
+              ? 'El backend todavía no permite consultar disponibilidades.'
+              : error?.response?.data?.message ||
+                  'No se pudieron cargar las disponibilidades.'
+          );
+        }
       } finally {
-        setLoadingSlots(false);
+        if (!ignore) setLoadingSlots(false);
       }
     };
 
     loadAvailability();
+
+    return () => {
+      ignore = true;
+    };
   }, [doctorId]);
 
   const slots = useMemo(
@@ -80,8 +125,7 @@ function PatientHome() {
       rules.flatMap((rule) =>
         (rule.slots ?? [])
           .filter(
-            (slot) =>
-              slot.status?.toUpperCase() === 'AVAILABLE' && slot.id
+            (slot) => slot.status?.toUpperCase() === 'AVAILABLE' && slot.id
           )
           .map((slot) => ({
             ...slot,
@@ -98,16 +142,19 @@ function PatientHome() {
 
     if (!patientDni) {
       setErrorMessage('No se encontró el DNI de tu sesión. Vuelve a ingresar.');
+
       return;
     }
 
     if (!doctorId || !slotId) {
       setErrorMessage('Selecciona un médico y un horario disponible.');
+
       return;
     }
 
     if (reason.trim().length < 5) {
       setErrorMessage('El motivo debe tener al menos 5 caracteres.');
+
       return;
     }
 
@@ -145,7 +192,10 @@ function PatientHome() {
       </div>
 
       {errorMessage && (
-        <p role="alert" className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+        <p
+          role="alert"
+          className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700"
+        >
           {errorMessage}
         </p>
       )}
@@ -166,6 +216,45 @@ function PatientHome() {
       <Card className="p-6">
         <form onSubmit={bookAppointment} className="flex flex-col gap-5">
           <div className="flex flex-col gap-1.5">
+            <label htmlFor="specialty" className="text-sm font-semibold">
+              Especialidad
+            </label>
+            <select
+              id="specialty"
+              value={specialtyId}
+              onChange={(event) => {
+                const nextSpecialtyId = event.target.value;
+                const nextDoctor = doctors.find(
+                  (doctor) =>
+                    String(
+                      doctor.specialty?.specialtyId ?? doctor.specialty?.id
+                    ) === String(nextSpecialtyId)
+                );
+
+                setSpecialtyId(nextSpecialtyId);
+                setDoctorId(nextDoctor?.id ?? '');
+                setErrorMessage('');
+              }}
+              disabled={loadingDoctors || specialties.length === 0}
+              className="w-full border border-med-border rounded-lg px-3 py-2.5 text-sm"
+            >
+              {specialties.length === 0 ? (
+                <option value="">
+                  {loadingDoctors
+                    ? 'Cargando especialidades…'
+                    : 'No hay especialidades disponibles'}
+                </option>
+              ) : (
+                specialties.map((specialty) => (
+                  <option key={specialty.id} value={specialty.id}>
+                    {specialty.name}
+                  </option>
+                ))
+              )}
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
             <label htmlFor="doctor" className="text-sm font-semibold">
               Médico
             </label>
@@ -173,15 +262,15 @@ function PatientHome() {
               id="doctor"
               value={doctorId}
               onChange={(event) => setDoctorId(event.target.value)}
-              disabled={loadingDoctors || doctors.length === 0}
+              disabled={loadingDoctors || filteredDoctors.length === 0}
               className="w-full border border-med-border rounded-lg px-3 py-2.5 text-sm"
             >
               {loadingDoctors ? (
                 <option>Cargando médicos…</option>
-              ) : doctors.length === 0 ? (
-                <option value="">No hay médicos disponibles</option>
+              ) : filteredDoctors.length === 0 ? (
+                <option value="">No hay médicos para esta especialidad</option>
               ) : (
-                doctors.map((doctor) => (
+                filteredDoctors.map((doctor) => (
                   <option key={doctor.id} value={doctor.id}>
                     {doctor.name}
                     {doctor.specialty?.name
