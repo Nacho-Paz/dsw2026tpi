@@ -1,0 +1,8 @@
+@Dsw2026Tpi.Api_HostAddress = https://localhost:7001
+@accessToken = 
+
+### Health Check
+GET {{Dsw2026Tpi.Api_HostAddress}}/health-check
+Accept: application/json
+
+###
