@@ -10,6 +10,30 @@ import {
 } from '../../doctors/services/doctorService';
 import { getSpecialties } from '../../specialties/services/specialtyService';
 
+function getDateKey(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
+function getMonday(date) {
+  const monday = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const dayOfWeek = (monday.getDay() + 6) % 7;
+
+  monday.setDate(monday.getDate() - dayOfWeek);
+
+  return monday;
+}
+
+function formatCalendarDate(date) {
+  return new Intl.DateTimeFormat('es-AR', {
+    day: 'numeric',
+    month: 'short',
+  }).format(date);
+}
+
 function PatientHome() {
   const navigate = useNavigate();
   const { patientDni } = useAuth();
@@ -19,6 +43,7 @@ function PatientHome() {
   const [doctorId, setDoctorId] = useState('');
   const [rules, setRules] = useState([]);
   const [slotId, setSlotId] = useState('');
+  const [weekOffset, setWeekOffset] = useState(0);
   const [reason, setReason] = useState('');
   const [loadingDoctors, setLoadingDoctors] = useState(true);
   const [loadingSlots, setLoadingSlots] = useState(false);
@@ -122,18 +147,62 @@ function PatientHome() {
 
   const slots = useMemo(
     () =>
-      rules.flatMap((rule) =>
-        (rule.slots ?? [])
-          .filter(
-            (slot) => slot.status?.toUpperCase() === 'AVAILABLE' && slot.id
+      rules
+        .flatMap((rule) =>
+          (rule.slots ?? [])
+            .filter(
+              (slot) => slot.status?.toUpperCase() === 'AVAILABLE' && slot.id
+            )
+            .map((slot) => ({
+              ...slot,
+              day: rule.day,
+            }))
+        )
+        .sort((a, b) =>
+          `${a.slotDate} ${a.startTime}`.localeCompare(
+            `${b.slotDate} ${b.startTime}`
           )
-          .map((slot) => ({
-            ...slot,
-            day: rule.day,
-          }))
-      ),
+        ),
     [rules]
   );
+
+  const weekDays = useMemo(() => {
+    const monday = getMonday(new Date());
+
+    monday.setDate(monday.getDate() + weekOffset * 7);
+
+    return Array.from({ length: 7 }, (_, index) => {
+      const date = new Date(monday);
+
+      date.setDate(monday.getDate() + index);
+
+      return date;
+    });
+  }, [weekOffset]);
+
+  const slotsByDate = useMemo(
+    () =>
+      slots.reduce((groupedSlots, slot) => {
+        const date = slot.slotDate?.slice(0, 10);
+
+        if (!date) return groupedSlots;
+
+        if (!groupedSlots[date]) groupedSlots[date] = [];
+
+        groupedSlots[date].push(slot);
+
+        return groupedSlots;
+      }, {}),
+    [slots]
+  );
+
+  const selectedSlot = slots.find((slot) => slot.id === slotId);
+  const nextWeekStart = new Date(weekDays[0]);
+
+  nextWeekStart.setDate(nextWeekStart.getDate() + 7);
+  const canGoNextWeek =
+    slots.length > 0 &&
+    getDateKey(nextWeekStart) <= slots[slots.length - 1].slotDate;
 
   const bookAppointment = async (event) => {
     event.preventDefault();
@@ -168,6 +237,12 @@ function PatientHome() {
       });
 
       setSuccessMessage('¡Turno reservado correctamente!');
+      setRules((currentRules) =>
+        currentRules.map((rule) => ({
+          ...rule,
+          slots: (rule.slots ?? []).filter((slot) => slot.id !== slotId),
+        }))
+      );
       setSlotId('');
       setReason('');
     } catch (error) {
@@ -233,6 +308,7 @@ function PatientHome() {
 
                 setSpecialtyId(nextSpecialtyId);
                 setDoctorId(nextDoctor?.id ?? '');
+                setWeekOffset(0);
                 setErrorMessage('');
               }}
               disabled={loadingDoctors || specialties.length === 0}
@@ -261,7 +337,10 @@ function PatientHome() {
             <select
               id="doctor"
               value={doctorId}
-              onChange={(event) => setDoctorId(event.target.value)}
+              onChange={(event) => {
+                setDoctorId(event.target.value);
+                setWeekOffset(0);
+              }}
               disabled={loadingDoctors || filteredDoctors.length === 0}
               className="w-full border border-med-border rounded-lg px-3 py-2.5 text-sm"
             >
@@ -283,29 +362,107 @@ function PatientHome() {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="slot" className="text-sm font-semibold">
-              Horario disponible
-            </label>
-            <select
-              id="slot"
-              value={slotId}
-              onChange={(event) => setSlotId(event.target.value)}
-              disabled={loadingSlots || slots.length === 0}
-              className="w-full border border-med-border rounded-lg px-3 py-2.5 text-sm"
-            >
-              <option value="">
-                {loadingSlots
-                  ? 'Cargando horarios…'
-                  : slots.length
-                    ? 'Selecciona un horario'
-                    : 'No hay slots reservables en la respuesta del backend'}
-              </option>
-              {slots.map((slot) => (
-                <option key={slot.id} value={slot.id}>
-                  {slot.slotDate} · {slot.startTime}
-                </option>
-              ))}
-            </select>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-semibold text-med-text-main">
+                  Horarios disponibles
+                </h2>
+                <p className="text-xs text-med-text-muted mt-1">
+                  Elegí un día y un horario de 30 minutos.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setWeekOffset((current) => current - 1)}
+                  disabled={weekOffset === 0 || loadingSlots}
+                  aria-label="Ver semana anterior"
+                >
+                  ‹
+                </Button>
+                <span className="min-w-32 text-center text-xs font-medium text-med-text-sub">
+                  {formatCalendarDate(weekDays[0])} –{' '}
+                  {formatCalendarDate(weekDays[6])}
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setWeekOffset((current) => current + 1)}
+                  disabled={!canGoNextWeek || loadingSlots}
+                  aria-label="Ver semana siguiente"
+                >
+                  ›
+                </Button>
+              </div>
+            </div>
+
+            {loadingSlots ? (
+              <p className="py-8 text-center text-sm text-med-text-muted">
+                Cargando horarios…
+              </p>
+            ) : slots.length === 0 ? (
+              <p className="py-8 text-center text-sm text-med-text-muted">
+                No hay horarios disponibles para este médico.
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <div className="grid min-w-[700px] grid-cols-7 gap-2">
+                  {weekDays.map((date) => {
+                    const dateKey = getDateKey(date);
+                    const daySlots = slotsByDate[dateKey] ?? [];
+
+                    return (
+                      <section
+                        key={dateKey}
+                        className="min-h-36 rounded-lg border border-med-border bg-white p-2"
+                      >
+                        <div className="mb-2 border-b border-med-border pb-2 text-center">
+                          <p className="text-[10px] font-semibold uppercase text-med-text-muted">
+                            {date.toLocaleDateString('es-AR', {
+                              weekday: 'short',
+                            })}
+                          </p>
+                          <p className="text-sm font-bold text-med-text-main">
+                            {date.getDate()}
+                          </p>
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          {daySlots.length === 0 ? (
+                            <p className="pt-2 text-center text-[10px] text-med-text-muted">
+                              Sin horarios
+                            </p>
+                          ) : (
+                            daySlots.map((slot) => (
+                              <button
+                                key={slot.id}
+                                type="button"
+                                aria-pressed={slotId === slot.id}
+                                onClick={() => setSlotId(slot.id)}
+                                className={`rounded-md border px-1 py-1.5 text-[11px] font-medium transition ${
+                                  slotId === slot.id
+                                    ? 'border-med-primary-700 bg-med-primary-700 text-white'
+                                    : 'border-med-border text-med-text-main hover:border-med-primary-600 hover:bg-med-primary-50'
+                                }`}
+                              >
+                                {slot.startTime}
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      </section>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {selectedSlot && (
+              <p className="rounded-lg bg-med-primary-50 p-3 text-xs text-med-primary-900">
+                Turno seleccionado: {selectedSlot.slotDate} a las{' '}
+                {selectedSlot.startTime}
+              </p>
+            )}
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -323,7 +480,7 @@ function PatientHome() {
             />
           </div>
 
-          <Button type="submit" disabled={saving || slots.length === 0}>
+          <Button type="submit" disabled={saving || !slotId}>
             {saving ? 'Reservando…' : 'Confirmar turno'}
           </Button>
         </form>
