@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
 	<PropertyGroup>
 		<TargetFramework>net10.0</TargetFramework>
@@ -28,6 +28,10 @@
 		<ProjectReference Include="..\Dsw2026Tpi.Application\Dsw2026Tpi.Application.csproj" />
 		<ProjectReference Include="..\Dsw2026Tpi.Data\Dsw2026Tpi.Data.csproj" />
 		<ProjectReference Include="..\Dsw2026Tpi.Domain\Dsw2026Tpi.Domain.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Data\" />
 	</ItemGroup>
 
 </Project>
