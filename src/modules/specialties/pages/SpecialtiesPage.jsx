@@ -4,9 +4,15 @@ import Button from '../../shared/components/Button';
 
 function SpecialtiesPage() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [editingId, setEditingId] = useState(null);
 
-  const specialtiesList = [
-    {
+    
+
+   const [specialtiesList, setSpecialtiesList] = useState([
+     {
       id: 1,
       name: 'Cardiología',
       description:
@@ -93,17 +99,101 @@ function SpecialtiesPage() {
         </svg>
       ),
     },
-  ];
+  ]);
 
-  const filteredSpecialties = specialtiesList.filter(
-    (item) =>
-      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.description.toLowerCase().includes(searchTerm.toLowerCase())
+
+ 
+const handleCreateSpecialty = (e) => {
+  e.preventDefault();
+
+const trimmedName = name.trim();
+const trimmedDescription = description.trim();
+
+if (trimmedName.length < 3 || trimmedName.length > 100) {
+  alert('El nombre debe tener entre 3 y 100 caracteres.');
+  return;
+}
+
+if (
+  trimmedDescription.length < 10 ||
+  trimmedDescription.length > 100
+) {
+  alert('La descripción debe tener entre 10 y 100 caracteres.');
+  return;
+}
+
+  if (editingId !== null) {
+    setSpecialtiesList((currentList) =>
+      currentList.map((spec) =>
+        spec.id === editingId
+          ? {
+              ...spec,
+              name: name.trim(),
+              description: description.trim(),
+            }
+          : spec
+      )
+    );
+  } else {
+    // Estamos creando una especialidad nueva
+    const newSpecialty = {
+      id: Date.now(),
+      name: name.trim(),
+      description: description.trim(),
+      status: 'Active',
+    };
+
+    setSpecialtiesList((currentList) => [
+      ...currentList,
+      newSpecialty,
+    ]);
+  }
+
+  setName('');
+  setDescription('');
+  setEditingId(null);
+  setShowForm(false);
+};
+
+const handleEditSpecialty = (spec) => {
+  setEditingId(spec.id);
+  setName(spec.name);
+  setDescription(spec.description);
+  setShowForm(true);
+};
+
+
+const handleDeleteSpecialty = (id) => {
+  const confirmDelete = window.confirm(
+    '¿Estás segura de que querés eliminar esta especialidad?'
   );
+
+  if (!confirmDelete) {
+    return;
+  }
+
+  setSpecialtiesList((currentList) =>
+    currentList.filter((spec) => spec.id !== id)
+  );
+
+  if (editingId === id) {
+    setEditingId(null);
+    setName('');
+    setDescription('');
+    setShowForm(false);
+  }
+};
+
+  const filteredSpecialties = specialtiesList.filter((item) =>
+  searchTerm.trim().length < 3
+    ? true
+    : item.name.toLowerCase().includes(searchTerm.trim().toLowerCase())
+);
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Cabecera con Título, Buscador y Botón */}
+     {/* Cabecera con Título, Buscador y Botón */}
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-med-text-main">
@@ -116,7 +206,7 @@ function SpecialtiesPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          {/* Buscador */}
+           {/* Buscador */}
           <div className="relative min-w-[240px] flex-1 sm:flex-initial">
             <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-med-text-muted">
               <svg
@@ -142,9 +232,15 @@ function SpecialtiesPage() {
             />
           </div>
 
-          {/* Botón Nueva Especialidad */}
+        {/* Botón Nueva Especialidad */}
+
           <Button
-            onClick={() => alert('Abrir modal para crear nueva especialidad')}
+           onClick={() => {
+           setEditingId(null);
+           setName('');
+           setDescription('');
+           setShowForm(true);
+          }}
             className="flex items-center gap-1.5 bg-med-primary-900 hover:bg-med-primary-800 text-white font-medium"
           >
             <span>+</span>
@@ -152,6 +248,72 @@ function SpecialtiesPage() {
           </Button>
         </div>
       </div>
+
+            
+
+      {showForm && (
+        <Card className="p-5 border-med-border">
+          <h2 className="text-lg font-bold text-med-primary-900 mb-4">
+             {editingId !== null ? 'Editar Especialidad' : 'Nueva Especialidad'}
+          </h2>
+
+          <form
+            onSubmit={handleCreateSpecialty}
+            className="flex flex-col gap-4"
+          >
+            <div>
+              <label className="block text-sm font-medium text-med-text-main mb-1">
+                Nombre de la especialidad
+              </label>
+
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ej: Oftalmología"
+                required
+                className="w-full border border-med-border rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-med-primary-600"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-med-text-main mb-1">
+                Descripción
+              </label>
+
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Ingresá una descripción"
+                rows="3"
+                required
+                className="w-full border border-med-border rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-med-primary-600"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+               onClick={() => {
+               setShowForm(false);
+               setEditingId(null);
+               setName('');
+               setDescription('');
+              }}
+                className="px-4 py-2 rounded-lg border border-med-border text-med-text-sub hover:bg-gray-100"
+              >
+                Cancelar
+              </button>
+
+              <Button
+                type="submit"
+                className="bg-med-primary-900 hover:bg-med-primary-800 text-white"
+              >
+                {editingId !== null ? 'Guardar cambios' : 'Guardar especialidad'}              </Button>
+            </div>
+          </form>
+        </Card>
+      )}
 
       {/* Tabla Principal de Especialidades */}
       <Card className="p-0 overflow-hidden border-med-border">
@@ -176,7 +338,8 @@ function SpecialtiesPage() {
                   key={spec.id}
                   className="hover:bg-gray-50/70 transition-colors"
                 >
-                  {/* Nombre con icono en caja celeste */}
+                 {/* Nombre con icono en caja celeste */}
+
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-med-primary-100 text-med-primary-700 flex items-center justify-center shrink-0">
@@ -187,13 +350,15 @@ function SpecialtiesPage() {
                       </span>
                     </div>
                   </td>
+                
+                
+                {/* Descripción */}
 
-                  {/* Descripción */}
                   <td className="px-6 py-4 text-med-text-sub max-w-md">
                     {spec.description}
                   </td>
-
-                  {/* Estado (Active / Inactive) */}
+                  
+                 {/* Estado (Active / Inactive) */}
                   <td className="px-6 py-4 text-center">
                     {spec.status === 'Active' ? (
                       <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-med-active-bg text-med-active-text">
@@ -206,16 +371,14 @@ function SpecialtiesPage() {
                     )}
                   </td>
 
-                  {/* Acciones: Editar y Eliminar */}
+                 {/* Acciones: Editar y Eliminar */}
+
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2 text-med-text-muted">
                       <button
                         title="Editar especialidad"
                         className="p-1.5 rounded-lg hover:bg-med-primary-50 text-med-text-muted hover:text-med-primary-900 transition"
-                        onClick={() =>
-                          alert(`Editar especialidad ${spec.name}`)
-                        }
-                      >
+                        onClick={() => handleEditSpecialty(spec)}                      >
                         <svg
                           className="w-4 h-4"
                           fill="none"
@@ -233,11 +396,8 @@ function SpecialtiesPage() {
 
                       <button
                         title="Eliminar especialidad"
-                        className="p-1.5 rounded-lg hover:bg-red-50 text-med-text-muted hover:text-med-danger-text transition"
-                        onClick={() =>
-                          alert(`Eliminar especialidad ${spec.name}`)
-                        }
-                      >
+                        className="p-1.5 rounded-lg hover:bg-red-50 text-med-danger-text transition"
+                        onClick={() => handleDeleteSpecialty(spec.id)}>
                         <svg
                           className="w-4 h-4"
                           fill="none"
@@ -260,7 +420,6 @@ function SpecialtiesPage() {
           </table>
         </div>
 
-        {/* Paginador normalizado idéntico a Búsqueda y Filtrado de Citas */}
         <div className="p-4 bg-med-primary-50/50 border-t border-med-border flex items-center justify-between text-xs text-med-text-muted">
           <span>Mostrando 4 de 32 registros</span>
           <div className="flex items-center gap-1">

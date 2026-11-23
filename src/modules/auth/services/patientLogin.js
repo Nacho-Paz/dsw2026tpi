@@ -8,3 +8,4 @@ export const loginPatient = async (email, dni) => {
 
   return { data: response.data, error: null };
 };
+

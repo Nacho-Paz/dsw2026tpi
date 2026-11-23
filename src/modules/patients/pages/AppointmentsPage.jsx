@@ -1,90 +1,126 @@
+import { useCallback, useEffect, useState } from 'react';
 import Card from '../../shared/components/Card';
 import Button from '../../shared/components/Button';
+import { instance } from '../../shared/api/axiosInstance';
+
+function formatDate(value) {
+  if (!value) return 'Fecha no disponible';
+
+  return new Intl.DateTimeFormat('es-AR', {
+    dateStyle: 'long',
+  }).format(new Date(value));
+}
 
 function AppointmentsPage() {
-  const sampleAppointments = [
-    {
-      id: 1,
-      doctor: 'Dra. María González',
-      specialty: 'Cardiología',
-      date: '2026-10-28',
-      time: '10:30 hs',
-      status: 'Confirmado',
-    },
-    {
-      id: 2,
-      doctor: 'Dr. Lucas Fernández',
-      specialty: 'Traumatología',
-      date: '2026-11-05',
-      time: '15:00 hs',
-      status: 'Pendiente',
-    },
-  ];
+  const [appointments, setAppointments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [cancellingId, setCancellingId] = useState(null);
+
+  const loadAppointments = useCallback(async () => {
+    const dni = localStorage.getItem('patientDni');
+
+    if (!dni) {
+      setErrorMessage('No se encontró el DNI de la sesión. Vuelve a ingresar.');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setErrorMessage('');
+      const response = await instance.get('api/appointments/patient', {
+        params: { dni },
+      });
+      setAppointments(Array.isArray(response.data) ? response.data : []);
+    } catch (error) {
+      setErrorMessage(
+        error?.response?.data?.message ||
+          'No se pudieron cargar tus turnos.'
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadAppointments();
+  }, [loadAppointments]);
+
+  const cancelAppointment = async (appointmentId) => {
+    if (!window.confirm('¿Quieres cancelar este turno?')) return;
+
+    try {
+      setCancellingId(appointmentId);
+      await instance.delete(`api/appointments/${appointmentId}`);
+      await loadAppointments();
+    } catch (error) {
+      setErrorMessage(
+        error?.response?.data?.message ||
+          'No se pudo cancelar el turno.'
+      );
+    } finally {
+      setCancellingId(null);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-med-text-main">
-            Mis Turnos Médicos
-          </h1>
-          <p className="text-sm text-med-text-sub mt-1">
-            Consulta y gestiona las citas médicas programadas.
-          </p>
-        </div>
-        <Button onClick={() => alert('Función de nuevo turno próximamente')}>
-          + Solicitar Nuevo Turno
-        </Button>
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-bold text-med-text-main">
+          Mis turnos médicos
+        </h1>
+        <p className="text-sm text-med-text-sub mt-1">
+          Consulta y gestiona tus próximos turnos.
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        {sampleAppointments.map((appt) => (
-          <Card
-            key={appt.id}
-            className="flex flex-col justify-between gap-4 p-6"
-          >
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-med-primary-100 text-med-primary-700">
-                  {appt.specialty}
+      {errorMessage && (
+        <p role="alert" className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+          {errorMessage}
+        </p>
+      )}
+
+      {loading ? (
+        <p className="text-sm text-med-text-sub">Cargando turnos…</p>
+      ) : appointments.length === 0 ? (
+        <Card className="p-6">
+          <p className="text-med-text-sub">No tienes turnos próximos.</p>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {appointments.map((appointment) => (
+            <Card
+              key={appointment.appointmentId}
+              className="flex flex-col justify-between gap-4 p-6"
+            >
+              <div>
+                <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-med-active-bg text-med-active-text">
+                  {appointment.status}
                 </span>
-                <span
-                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
-                    appt.status === 'Confirmado'
-                      ? 'bg-med-active-bg text-med-active-text'
-                      : 'bg-med-leave-bg text-med-leave-text'
-                  }`}
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                  {appt.status}
-                </span>
+                <h2 className="text-lg font-bold text-med-primary-900 mt-3">
+                  {appointment.doctorName}
+                </h2>
+                <p className="text-sm text-med-text-sub mt-2">
+                  {formatDate(appointment.date)} · {appointment.startTime}
+                </p>
               </div>
-              <h3 className="text-lg font-bold text-med-primary-900">
-                {appt.doctor}
-              </h3>
-              <p className="text-sm text-med-text-sub mt-2">
-                Fecha:{' '}
-                <strong className="text-med-text-main font-semibold">
-                  {appt.date}
-                </strong>{' '}
-                a las{' '}
-                <strong className="text-med-text-main font-semibold">
-                  {appt.time}
-                </strong>
-              </p>
-            </div>
-            <div className="flex gap-2 pt-3 border-t border-med-border">
-              <Button
-                variant="outline"
-                className="w-full text-xs"
-                onClick={() => alert(`Cancelando turno ${appt.id}`)}
-              >
-                Cancelar Turno
-              </Button>
-            </div>
-          </Card>
-        ))}
-      </div>
+
+              <div className="pt-3 border-t border-med-border">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  disabled={cancellingId === appointment.appointmentId}
+                  onClick={() => cancelAppointment(appointment.appointmentId)}
+                >
+                  {cancellingId === appointment.appointmentId
+                    ? 'Cancelando…'
+                    : 'Cancelar turno'}
+                </Button>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
