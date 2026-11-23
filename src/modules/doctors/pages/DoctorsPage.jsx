@@ -157,25 +157,25 @@ function DoctorsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-med-border-subtle">
+              
               {loading && <TableMessage>Cargando doctores...</TableMessage>}
-
-              {isEmpty && (
-                <TableMessage>
-                  {searchTerm.trim()
-                    ? 'No se encontraron doctores con ese nombre.'
-                    : 'Todavía no hay doctores registrados.'}
-                </TableMessage>
-              )}
+               
+               {isEmpty && (
+               <TableMessage>
+               {searchTerm.trim()
+              ? 'No se encontraron doctores con ese nombre.'
+              : 'Todavía no hay doctores registrados.'}
+             </TableMessage>)}
 
               {!loading &&
-                doctors.map((doctor) => (
-                  <DoctorRow
-                    key={doctor.id}
-                    doctor={doctor}
-                    onDelete={setDoctorToDelete}
-                  />
-                ))}
-            </tbody>
+              doctors.map((doctor) => (
+              <DoctorRow
+              key={doctor.id}
+              doctor={doctor}
+              onDelete={setDoctorToDelete}
+                           />
+                     ))}
+              </tbody>
           </table>
         </div>
 
