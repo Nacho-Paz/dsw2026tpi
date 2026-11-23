@@ -8,21 +8,40 @@ function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     const token = localStorage.getItem('token');
     const role = localStorage.getItem('role');
+    const patientDni = sessionStorage.getItem('patientDni');
 
-    return Boolean(token && role);
+    return Boolean(
+      token && (role === 'Administrador' || (role === 'Paciente' && patientDni))
+    );
   });
   const [role, setRole] = useState(() => localStorage.getItem('role'));
+  const [patientDni, setPatientDni] = useState(() => {
+    if (localStorage.getItem('role') !== 'Paciente') return null;
+
+    return sessionStorage.getItem('patientDni');
+  });
 
   const singout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('role');
+    sessionStorage.removeItem('patientDni');
     setIsAuthenticated(false);
     setRole(null);
+    setPatientDni(null);
   };
 
-  const setAuthSession = (token, userRole) => {
+  const setAuthSession = (token, userRole, dni = null) => {
     localStorage.setItem('token', token);
     localStorage.setItem('role', userRole);
+
+    if (userRole === 'Paciente' && dni) {
+      sessionStorage.setItem('patientDni', String(dni));
+      setPatientDni(String(dni));
+    } else {
+      sessionStorage.removeItem('patientDni');
+      setPatientDni(null);
+    }
+
     setIsAuthenticated(true);
     setRole(userRole);
   };
@@ -46,7 +65,7 @@ function AuthProvider({ children }) {
       return { error };
     }
 
-    setAuthSession(data.token, data.role);
+    setAuthSession(data.token, data.role, dni);
 
     return { error: null };
   };
@@ -56,6 +75,7 @@ function AuthProvider({ children }) {
       value={{
         isAuthenticated,
         role,
+        patientDni,
         singinAdmin,
         singinPatient,
         singout,

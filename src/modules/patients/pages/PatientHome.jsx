@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import Card from '../../shared/components/Card';
 import Button from '../../shared/components/Button';
 import { instance } from '../../shared/api/axiosInstance';
+import useAuth from '../../auth/hook/useAuth';
 
 function PatientHome() {
   const navigate = useNavigate();
+  const { patientDni } = useAuth();
   const [doctors, setDoctors] = useState([]);
   const [doctorId, setDoctorId] = useState('');
   const [rules, setRules] = useState([]);
@@ -94,9 +96,7 @@ function PatientHome() {
     setErrorMessage('');
     setSuccessMessage('');
 
-    const dni = localStorage.getItem('patientDni');
-
-    if (!dni) {
+    if (!patientDni) {
       setErrorMessage('No se encontró el DNI de tu sesión. Vuelve a ingresar.');
       return;
     }
@@ -116,7 +116,7 @@ function PatientHome() {
       await instance.post('api/appointments', {
         doctorId,
         availabilitySlotId: slotId,
-        patient: { dni: Number(dni) },
+        patient: { dni: Number(patientDni) },
         reason: reason.trim(),
       });
 

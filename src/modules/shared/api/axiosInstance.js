@@ -21,12 +21,23 @@ instance.interceptors.request.use(
 instance.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      if (window.location.pathname.includes('/admin/')) {
-        localStorage.clear();
-        window.location.href = '/login';
-      } else {
-        localStorage.removeItem('token');
+    const requestUrl = error.config?.url ?? '';
+    const isLoginRequest = /api\/auth\/(admin|patient)\/login/i.test(
+      requestUrl
+    );
+
+    if (error.response?.status === 401 && !isLoginRequest) {
+      const role = localStorage.getItem('role');
+      const isAdminArea = window.location.pathname.startsWith('/admin');
+      const loginPath =
+        role === 'Administrador' || isAdminArea ? '/admin/login' : '/login';
+
+      localStorage.removeItem('token');
+      localStorage.removeItem('role');
+      sessionStorage.removeItem('patientDni');
+
+      if (window.location.pathname !== loginPath) {
+        window.location.href = loginPath;
       }
     }
 
