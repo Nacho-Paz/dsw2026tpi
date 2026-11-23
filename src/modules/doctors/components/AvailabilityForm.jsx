@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import Button from '../../shared/components/Button';
+import Button from '../../../shared/components/Button';
 import { getAllDoctors } from '../services/doctorService';
-import { useDoctorAvailability } from '../hooks/useDoctorAvailability';
+import { useDoctorAvailability } from '../hooks/useDoctorsAvailability';
 
 const TIME_INPUT =
   'border border-med-border rounded-lg px-3 py-1.5 text-xs bg-white text-med-text-main disabled:bg-slate-100 disabled:text-slate-400 focus:outline-none focus:ring-2 focus:ring-med-primary-600';

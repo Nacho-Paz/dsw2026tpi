@@ -1,5 +1,5 @@
-import Card from '../../shared/components/Card';
-import Button from '../../shared/components/Button';
+import Card from '../../../shared/components/Card';
+import Button from '../../../shared/components/Button';
 import ActiveFilterChip from './ActiveFilterChip';
 import { SearchIcon, RefreshIcon, FilterIcon } from './AppointmentIcons';
 import { MAX_DNI_LENGTH } from '../constants/appointmentConstants';

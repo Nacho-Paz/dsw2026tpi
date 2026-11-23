@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import Card from '../../shared/components/Card';
-import Button from '../../shared/components/Button';
-import { instance } from '../../shared/api/axiosInstance';
+import Card from '../../../shared/components/Card';
+import Button from '../../../shared/components/Button';
+import { instance } from '../../../shared/services/axiosInstance';
+import useAuth from '../../auth/hooks/useAuth';
 
 function formatDate(value) {
   if (!value) return 'Fecha no disponible';
@@ -12,15 +13,14 @@ function formatDate(value) {
 }
 
 function AppointmentsPage() {
+  const { patientDni } = useAuth();
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
   const [cancellingId, setCancellingId] = useState(null);
 
   const loadAppointments = useCallback(async () => {
-    const dni = localStorage.getItem('patientDni');
-
-    if (!dni) {
+    if (!patientDni) {
       setErrorMessage('No se encontró el DNI de la sesión. Vuelve a ingresar.');
       setLoading(false);
       return;
@@ -29,7 +29,7 @@ function AppointmentsPage() {
     try {
       setErrorMessage('');
       const response = await instance.get('api/appointments/patient', {
-        params: { dni },
+        params: { dni: patientDni },
       });
       setAppointments(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
@@ -40,7 +40,7 @@ function AppointmentsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [patientDni]);
 
   useEffect(() => {
     loadAppointments();

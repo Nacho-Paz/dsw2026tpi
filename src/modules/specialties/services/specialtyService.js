@@ -1,4 +1,4 @@
-import { instance } from '../../shared/api/axiosInstance';
+import { instance } from '../../../shared/services/axiosInstance';
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
 

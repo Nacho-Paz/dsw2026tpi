@@ -1,4 +1,4 @@
-import { instance } from '../../shared/api/axiosInstance';
+import { instance } from '../../../shared/services/axiosInstance';
 import { CATALOG_PAGE_SIZE } from '../constants/appointmentConstants';
 
 // Respuesta del backend (Pagination<T>): { pageSize, pageIndex, total, data }

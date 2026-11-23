@@ -1,4 +1,4 @@
-import { instance } from '../../shared/api/axiosInstance';
+import { instance } from '../../../shared/services/axiosInstance';
 
 export async function getDoctorsForPatient() {
   const { data } = await instance.get('/api/doctors', {
