@@ -25,6 +25,7 @@ function OverviewPage() {
 
   const doctors = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
+
     if (!query) return overview?.doctors ?? [];
 
     return (overview?.doctors ?? []).filter((doctor) =>

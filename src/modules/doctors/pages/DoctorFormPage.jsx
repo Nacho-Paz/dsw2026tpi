@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
+import {
+  Navigate,
+  useLocation,
+  useNavigate,
+  useParams,
+} from 'react-router-dom';
 import Card from '../../../shared/components/Card';
 import Button from '../../../shared/components/Button';
 import { getSpecialties } from '../../specialties/services/specialtyService';
@@ -15,7 +20,10 @@ function DoctorFormPage() {
 
   const isEdit = Boolean(id);
   // Solo usamos el doctor del state si corresponde al id de la URL
-  const doctorToEdit = state?.doctor?.id === id ? state.doctor : null;
+  const doctorToEdit =
+    isEdit && state && state.doctor && state.doctor.id === id
+      ? state.doctor
+      : null;
 
   const [specialties, setSpecialties] = useState([]);
   const [loadingSpecialties, setLoadingSpecialties] = useState(true);
@@ -34,15 +42,18 @@ function DoctorFormPage() {
     const loadSpecialties = async () => {
       try {
         const list = await getSpecialties();
+
         if (!ignore) setSpecialties(list);
       } catch {
-        if (!ignore) setServerError('No se pudo cargar la lista de especialidades.');
+        if (!ignore)
+          setServerError('No se pudo cargar la lista de especialidades.');
       } finally {
         if (!ignore) setLoadingSpecialties(false);
       }
     };
 
     loadSpecialties();
+
     return () => {
       ignore = true;
     };
@@ -59,18 +70,25 @@ function DoctorFormPage() {
   const validate = () => {
     const next = {};
     const name = form.name.trim();
+
     if (name.length < 3 || name.length > 100)
       next.name = 'El nombre debe tener entre 3 y 100 caracteres.';
+
     if (!form.specialtyId) next.specialtyId = 'Seleccioná una especialidad.';
+
     if (!form.licenseNumber.trim())
       next.licenseNumber = 'La matrícula es obligatoria.';
+
     setErrors(next);
+
     return Object.keys(next).length === 0;
   };
 
   const handleSubmit = async () => {
     setServerError('');
+
     if (!validate()) return;
+
     setSaving(true);
     try {
       const payload = {
@@ -78,11 +96,13 @@ function DoctorFormPage() {
         licenseNumber: form.licenseNumber.trim(),
         specialtyId: form.specialtyId,
       };
+
       if (isEdit) {
         await updateDoctor(id, payload);
       } else {
         await createDoctor(payload);
       }
+
       navigate('/admin/doctors');
     } catch (err) {
       setServerError(

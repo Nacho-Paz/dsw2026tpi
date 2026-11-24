@@ -10,6 +10,7 @@ function Modal({ isOpen, onClose, title, children }) {
     };
 
     document.addEventListener('keydown', handleKeyDown);
+
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]); //le indica a React que solo vuelva a ejecutar (y limpiar) este efecto cuando cambie el valor de isOpen o la referencia de onClose.
 

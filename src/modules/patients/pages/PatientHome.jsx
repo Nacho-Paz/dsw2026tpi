@@ -1,259 +1,37 @@
-import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Card from '../../../shared/components/Card';
 import Button from '../../../shared/components/Button';
-import { instance } from '../../../shared/services/axiosInstance';
-import useAuth from '../../auth/hooks/useAuth';
-import {
-  getDoctors,
-  getDoctorAvailabilities,
-} from '../../doctors/services/doctorService';
-import { getSpecialties } from '../../specialties/services/specialtyService';
-
-function getDateKey(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-
-  return `${year}-${month}-${day}`;
-}
-
-function getMonday(date) {
-  const monday = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const dayOfWeek = (monday.getDay() + 6) % 7;
-
-  monday.setDate(monday.getDate() - dayOfWeek);
-
-  return monday;
-}
-
-function formatCalendarDate(date) {
-  return new Intl.DateTimeFormat('es-AR', {
-    day: 'numeric',
-    month: 'short',
-  }).format(date);
-}
+import useBookAppointment from '../hooks/useBookAppointment';
+import { getDateKey, formatCalendarDate } from '../utils/calendarHelpers';
 
 function PatientHome() {
   const navigate = useNavigate();
-  const { patientDni } = useAuth();
-  const [specialties, setSpecialties] = useState([]);
-  const [specialtyId, setSpecialtyId] = useState('');
-  const [doctors, setDoctors] = useState([]);
-  const [doctorId, setDoctorId] = useState('');
-  const [rules, setRules] = useState([]);
-  const [slotId, setSlotId] = useState('');
-  const [weekOffset, setWeekOffset] = useState(0);
-  const [reason, setReason] = useState('');
-  const [loadingDoctors, setLoadingDoctors] = useState(true);
-  const [loadingSlots, setLoadingSlots] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
-
-  const filteredDoctors = useMemo(
-    () =>
-      doctors.filter(
-        (doctor) =>
-          String(doctor.specialty?.specialtyId ?? doctor.specialty?.id) ===
-          String(specialtyId)
-      ),
-    [doctors, specialtyId]
-  );
-
-  useEffect(() => {
-    const loadCatalogs = async () => {
-      try {
-        const [specialtyList, doctorPage] = await Promise.all([
-          getSpecialties(),
-          getDoctors({ page: 1, pageSize: 100 }),
-        ]);
-        const doctorList = doctorPage.data ?? [];
-        const firstSpecialty =
-          specialtyList.find((specialty) =>
-            doctorList.some(
-              (doctor) =>
-                String(
-                  doctor.specialty?.specialtyId ?? doctor.specialty?.id
-                ) === String(specialty.id)
-            )
-          ) ?? specialtyList[0];
-
-        setSpecialties(specialtyList);
-        setDoctors(doctorList);
-        setSpecialtyId(firstSpecialty?.id ?? '');
-        setDoctorId(
-          doctorList.find(
-            (doctor) =>
-              String(doctor.specialty?.specialtyId ?? doctor.specialty?.id) ===
-              String(firstSpecialty?.id)
-          )?.id ?? ''
-        );
-      } catch (error) {
-        setErrorMessage(
-          error?.response?.status === 403
-            ? 'El backend todavía no permite consultar especialidades y médicos.'
-            : error?.response?.data?.message ||
-                'No se pudieron cargar las especialidades y los médicos.'
-        );
-      } finally {
-        setLoadingDoctors(false);
-      }
-    };
-
-    loadCatalogs();
-  }, []);
-
-  useEffect(() => {
-    if (!doctorId) {
-      setRules([]);
-      setSlotId('');
-      setLoadingSlots(false);
-
-      return;
-    }
-
-    let ignore = false;
-
-    const loadAvailability = async () => {
-      setLoadingSlots(true);
-      setSlotId('');
-      setErrorMessage('');
-
-      try {
-        const availability = await getDoctorAvailabilities(doctorId);
-
-        if (!ignore) setRules(availability);
-      } catch (error) {
-        if (!ignore) {
-          setErrorMessage(
-            error?.response?.status === 403
-              ? 'El backend todavía no permite consultar disponibilidades.'
-              : error?.response?.data?.message ||
-                  'No se pudieron cargar las disponibilidades.'
-          );
-        }
-      } finally {
-        if (!ignore) setLoadingSlots(false);
-      }
-    };
-
-    loadAvailability();
-
-    return () => {
-      ignore = true;
-    };
-  }, [doctorId]);
-
-  const slots = useMemo(
-    () =>
-      rules
-        .flatMap((rule) =>
-          (rule.slots ?? [])
-            .filter(
-              (slot) => slot.status?.toUpperCase() === 'AVAILABLE' && slot.id
-            )
-            .map((slot) => ({
-              ...slot,
-              day: rule.day,
-            }))
-        )
-        .sort((a, b) =>
-          `${a.slotDate} ${a.startTime}`.localeCompare(
-            `${b.slotDate} ${b.startTime}`
-          )
-        ),
-    [rules]
-  );
-
-  const weekDays = useMemo(() => {
-    const monday = getMonday(new Date());
-
-    monday.setDate(monday.getDate() + weekOffset * 7);
-
-    return Array.from({ length: 7 }, (_, index) => {
-      const date = new Date(monday);
-
-      date.setDate(monday.getDate() + index);
-
-      return date;
-    });
-  }, [weekOffset]);
-
-  const slotsByDate = useMemo(
-    () =>
-      slots.reduce((groupedSlots, slot) => {
-        const date = slot.slotDate?.slice(0, 10);
-
-        if (!date) return groupedSlots;
-
-        if (!groupedSlots[date]) groupedSlots[date] = [];
-
-        groupedSlots[date].push(slot);
-
-        return groupedSlots;
-      }, {}),
-    [slots]
-  );
-
-  const selectedSlot = slots.find((slot) => slot.id === slotId);
-  const nextWeekStart = new Date(weekDays[0]);
-
-  nextWeekStart.setDate(nextWeekStart.getDate() + 7);
-  const canGoNextWeek =
-    slots.length > 0 &&
-    getDateKey(nextWeekStart) <= slots[slots.length - 1].slotDate;
-
-  const bookAppointment = async (event) => {
-    event.preventDefault();
-    setErrorMessage('');
-    setSuccessMessage('');
-
-    if (!patientDni) {
-      setErrorMessage('No se encontró el DNI de tu sesión. Vuelve a ingresar.');
-
-      return;
-    }
-
-    if (!doctorId || !slotId) {
-      setErrorMessage('Selecciona un médico y un horario disponible.');
-
-      return;
-    }
-
-    if (reason.trim().length < 5) {
-      setErrorMessage('El motivo debe tener al menos 5 caracteres.');
-
-      return;
-    }
-
-    try {
-      setSaving(true);
-      await instance.post('api/appointments', {
-        doctorId,
-        availabilitySlotId: slotId,
-        patient: { dni: Number(patientDni) },
-        reason: reason.trim(),
-      });
-
-      setSuccessMessage('¡Turno reservado correctamente!');
-      setRules((currentRules) =>
-        currentRules.map((rule) => ({
-          ...rule,
-          slots: (rule.slots ?? []).filter((slot) => slot.id !== slotId),
-        }))
-      );
-      setSlotId('');
-      setReason('');
-    } catch (error) {
-      setErrorMessage(
-        error?.response?.data?.message ||
-          'No se pudo reservar el turno. Puede que el horario ya no esté disponible.'
-      );
-    } finally {
-      setSaving(false);
-    }
-  };
+  const {
+    specialties,
+    filteredDoctors,
+    specialtyId,
+    doctorId,
+    weekDays,
+    weekOffset,
+    slots,
+    slotsByDate,
+    slotId,
+    setSlotId,
+    selectedSlot,
+    canGoNextWeek,
+    reason,
+    setReason,
+    loadingDoctors,
+    loadingSlots,
+    saving,
+    errorMessage,
+    successMessage,
+    handleSpecialtyChange,
+    handleDoctorChange,
+    goToPreviousWeek,
+    goToNextWeek,
+    bookAppointment,
+  } = useBookAppointment();
 
   return (
     <div className="max-w-3xl mx-auto flex flex-col gap-6">
@@ -297,20 +75,7 @@ function PatientHome() {
             <select
               id="specialty"
               value={specialtyId}
-              onChange={(event) => {
-                const nextSpecialtyId = event.target.value;
-                const nextDoctor = doctors.find(
-                  (doctor) =>
-                    String(
-                      doctor.specialty?.specialtyId ?? doctor.specialty?.id
-                    ) === String(nextSpecialtyId)
-                );
-
-                setSpecialtyId(nextSpecialtyId);
-                setDoctorId(nextDoctor?.id ?? '');
-                setWeekOffset(0);
-                setErrorMessage('');
-              }}
+              onChange={(event) => handleSpecialtyChange(event.target.value)}
               disabled={loadingDoctors || specialties.length === 0}
               className="w-full border border-med-border rounded-lg px-3 py-2.5 text-sm"
             >
@@ -337,10 +102,7 @@ function PatientHome() {
             <select
               id="doctor"
               value={doctorId}
-              onChange={(event) => {
-                setDoctorId(event.target.value);
-                setWeekOffset(0);
-              }}
+              onChange={(event) => handleDoctorChange(event.target.value)}
               disabled={loadingDoctors || filteredDoctors.length === 0}
               className="w-full border border-med-border rounded-lg px-3 py-2.5 text-sm"
             >
@@ -375,7 +137,7 @@ function PatientHome() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setWeekOffset((current) => current - 1)}
+                  onClick={goToPreviousWeek}
                   disabled={weekOffset === 0 || loadingSlots}
                   aria-label="Ver semana anterior"
                 >
@@ -388,7 +150,7 @@ function PatientHome() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setWeekOffset((current) => current + 1)}
+                  onClick={goToNextWeek}
                   disabled={!canGoNextWeek || loadingSlots}
                   aria-label="Ver semana siguiente"
                 >

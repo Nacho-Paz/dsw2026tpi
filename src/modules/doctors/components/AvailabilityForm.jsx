@@ -16,16 +16,8 @@ function AvailabilityForm() {
   const [loadingDoctors, setLoadingDoctors] = useState(true);
   const [doctorsError, setDoctorsError] = useState('');
 
-  const {
-    days,
-    loading,
-    saving,
-    error,
-    notice,
-    toggleDay,
-    changeTime,
-    save,
-  } = useDoctorAvailability(doctorId);
+  const { days, loading, saving, error, notice, toggleDay, changeTime, save } =
+    useDoctorAvailability(doctorId);
 
   // Carga la lista una vez; si el ?doctorId= no existe, elige el primero
   useEffect(() => {
@@ -34,8 +26,11 @@ function AvailabilityForm() {
     const loadDoctors = async () => {
       try {
         const list = await getAllDoctors();
+
         if (ignore) return;
+
         setDoctors(list);
+
         if (list.length > 0 && !list.some((d) => d.id === doctorId)) {
           setSearchParams({ doctorId: list[0].id }, { replace: true });
         }
@@ -49,6 +44,7 @@ function AvailabilityForm() {
     };
 
     loadDoctors();
+
     return () => {
       ignore = true;
     };
@@ -132,7 +128,9 @@ function AvailabilityForm() {
                 {days.map((day) => (
                   <tr
                     key={day.key}
-                    className={!day.active ? 'bg-slate-50/50 text-med-text-muted' : ''}
+                    className={
+                      !day.active ? 'bg-slate-50/50 text-med-text-muted' : ''
+                    }
                   >
                     <td className="py-3.5 px-6 font-medium text-med-text-main">
                       {day.label}
@@ -149,7 +147,9 @@ function AvailabilityForm() {
                         <div className="w-10 h-5 bg-slate-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all relative peer-checked:bg-med-primary-600" />
                         <span
                           className={`text-xs font-semibold ${
-                            day.active ? 'text-med-primary-600' : 'text-slate-400'
+                            day.active
+                              ? 'text-med-primary-600'
+                              : 'text-slate-400'
                           }`}
                         >
                           {day.active ? 'Activo' : 'Inactivo'}

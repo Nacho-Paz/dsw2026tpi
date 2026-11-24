@@ -1,5 +1,6 @@
 import { instance } from '../../../shared/services/axiosInstance';
-import { CATALOG_PAGE_SIZE } from '../constants/appointmentConstants';
+import { getSpecialties } from '../../specialties/services/specialtyService';
+import { getAllDoctors } from '../../doctors/services/doctorService';
 
 // Respuesta del backend (Pagination<T>): { pageSize, pageIndex, total, data }
 export const searchAppointments = async ({
@@ -25,18 +26,12 @@ export const searchAppointments = async ({
   return { items: data.data ?? [], total: data.total ?? 0 };
 };
 
-// TODO: reutilizar los servicios de doctors y specialties si ya existen
-const getCatalog = async (url) => {
-  const { data } = await instance.get(url, {
-    params: { pageIndex: 1, pageSize: CATALOG_PAGE_SIZE },
-  });
+export { getSpecialties, getAllDoctors as getDoctors };
 
-  return data.data ?? [];
+const AppointmentsService = {
+  searchAppointments,
+  getSpecialties,
+  getDoctors: getAllDoctors,
 };
-
-export const getSpecialties = () => getCatalog('/api/specialties');
-export const getDoctors = () => getCatalog('/api/doctors');
-
-const AppointmentsService = { searchAppointments, getSpecialties, getDoctors };
 
 export default AppointmentsService;

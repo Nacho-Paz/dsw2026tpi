@@ -18,6 +18,7 @@ export function useDashboardOverview() {
       setError('');
       try {
         const result = await getDashboardOverview();
+
         if (!ignore) setOverview(result);
       } catch (err) {
         if (!ignore) {
@@ -29,6 +30,7 @@ export function useDashboardOverview() {
     }
 
     loadOverview();
+
     return () => {
       ignore = true;
     };

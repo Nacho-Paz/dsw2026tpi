@@ -8,7 +8,8 @@ function AvailabilityPage() {
           Gestionar Disponibilidad Horaria
         </h1>
         <p className="text-sm text-med-text-sub mt-1">
-          Configure los días y horarios de atención para cada profesional médico.
+          Configure los días y horarios de atención para cada profesional
+          médico.
         </p>
       </div>
 

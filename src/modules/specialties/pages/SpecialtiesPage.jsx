@@ -7,6 +7,9 @@ import {
 } from '../services/specialtyService';
 import Card from '../../../shared/components/Card';
 import Button from '../../../shared/components/Button';
+import TablePagination from '../../../shared/components/TablePagination';
+
+const PAGE_SIZE = 10;
 
 function SpecialtiesPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -14,6 +17,7 @@ function SpecialtiesPage() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [editingId, setEditingId] = useState(null);
+  const [page, setPage] = useState(1);
 
   const [specialtiesList, setSpecialtiesList] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -121,6 +125,17 @@ function SpecialtiesPage() {
       : item.name.toLowerCase().includes(searchTerm.trim().toLowerCase())
   );
 
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredSpecialties.length / PAGE_SIZE)
+  );
+  const currentPage = Math.min(page, totalPages);
+
+  const paginatedSpecialties = filteredSpecialties.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
+
   return (
     <div className="flex flex-col gap-6">
       {/* Cabecera con Título, Buscador y Botón */}
@@ -158,7 +173,10 @@ function SpecialtiesPage() {
               type="text"
               placeholder="Buscar especialidad..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setPage(1);
+              }}
               className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-med-border rounded-lg text-med-text-main placeholder-med-text-muted focus:outline-none focus:ring-1 focus:ring-med-primary-600"
             />
           </div>
@@ -286,7 +304,7 @@ function SpecialtiesPage() {
                   </td>
                 </tr>
               ) : (
-                filteredSpecialties.map((spec) => (
+                paginatedSpecialties.map((spec) => (
                   <tr
                     key={spec.id}
                     className="hover:bg-gray-50/70 transition-colors"
@@ -375,17 +393,13 @@ function SpecialtiesPage() {
           </table>
         </div>
 
-        <div className="p-4 bg-med-primary-50/50 border-t border-med-border flex items-center justify-between text-xs text-med-text-muted">
-          <span>Mostrando {filteredSpecialties.length} especialidades</span>
-          <div className="flex items-center gap-1">
-            <button className="px-2.5 py-1 border border-med-border rounded bg-white text-med-text-sub hover:bg-gray-50">
-              ‹
-            </button>
-            <button className="px-2.5 py-1 border border-med-border rounded bg-white text-med-text-sub hover:bg-gray-50">
-              ›
-            </button>
-          </div>
-        </div>
+        <TablePagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredSpecialties.length}
+          pageSize={PAGE_SIZE}
+          onPageChange={setPage}
+        />
       </Card>
     </div>
   );

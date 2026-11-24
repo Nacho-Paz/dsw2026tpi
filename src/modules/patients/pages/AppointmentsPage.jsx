@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import Card from '../../../shared/components/Card';
 import Button from '../../../shared/components/Button';
-import { instance } from '../../../shared/services/axiosInstance';
+import {
+  getPatientAppointments,
+  cancelPatientAppointment,
+} from '../services/patientAppointmentService';
 import useAuth from '../../auth/hooks/useAuth';
 
 function formatDate(value) {
@@ -23,19 +26,18 @@ function AppointmentsPage() {
     if (!patientDni) {
       setErrorMessage('No se encontró el DNI de la sesión. Vuelve a ingresar.');
       setLoading(false);
+
       return;
     }
 
     try {
       setErrorMessage('');
-      const response = await instance.get('api/appointments/patient', {
-        params: { dni: patientDni },
-      });
-      setAppointments(Array.isArray(response.data) ? response.data : []);
+      const data = await getPatientAppointments(patientDni);
+
+      setAppointments(data);
     } catch (error) {
       setErrorMessage(
-        error?.response?.data?.message ||
-          'No se pudieron cargar tus turnos.'
+        error?.response?.data?.message || 'No se pudieron cargar tus turnos.'
       );
     } finally {
       setLoading(false);
@@ -51,12 +53,11 @@ function AppointmentsPage() {
 
     try {
       setCancellingId(appointmentId);
-      await instance.delete(`api/appointments/${appointmentId}`);
+      await cancelPatientAppointment(appointmentId);
       await loadAppointments();
     } catch (error) {
       setErrorMessage(
-        error?.response?.data?.message ||
-          'No se pudo cancelar el turno.'
+        error?.response?.data?.message || 'No se pudo cancelar el turno.'
       );
     } finally {
       setCancellingId(null);
@@ -75,7 +76,10 @@ function AppointmentsPage() {
       </div>
 
       {errorMessage && (
-        <p role="alert" className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+        <p
+          role="alert"
+          className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700"
+        >
           {errorMessage}
         </p>
       )}

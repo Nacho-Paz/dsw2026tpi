@@ -63,6 +63,7 @@ export const getDoctors = async ({ name, page = 1, pageSize = 10 } = {}) => {
       doctor.name.toLowerCase().includes(text)
     );
     const start = (page - 1) * pageSize;
+
     return {
       pageSize,
       pageIndex: toPageIndex(page),
@@ -78,11 +79,13 @@ export const getDoctors = async ({ name, page = 1, pageSize = 10 } = {}) => {
       name: name || undefined,
     },
   });
+
   return res.data;
 };
 
 export const getAllDoctors = async () => {
   const result = await getDoctors({ page: 1, pageSize: 100 });
+
   return result.data;
 };
 
@@ -91,6 +94,7 @@ export const deleteDoctor = async (id) => {
   if (USE_MOCK) {
     await wait(300);
     mockDoctors = mockDoctors.filter((doctor) => doctor.id !== id);
+
     return;
   }
 
@@ -104,7 +108,9 @@ export async function createDoctor({ name, licenseNumber, specialtyId }) {
       (s) => s.specialtyId === specialtyId
     ) ?? { specialtyId, name: 'Sin especialidad' };
     const doctor = { id: `m${Date.now()}`, name, licenseNumber, specialty };
+
     mockDoctors = [doctor, ...mockDoctors];
+
     return doctor;
   }
 
@@ -113,6 +119,7 @@ export async function createDoctor({ name, licenseNumber, specialtyId }) {
     licenseNumber,
     specialtyId,
   });
+
   return data;
 }
 
@@ -123,7 +130,9 @@ export async function updateDoctor(id, { name, licenseNumber, specialtyId }) {
       (s) => s.specialtyId === specialtyId
     ) ?? { specialtyId, name: 'Sin especialidad' };
     const updated = { id, name, licenseNumber, specialty };
+
     mockDoctors = mockDoctors.map((d) => (d.id === id ? updated : d));
+
     return updated;
   }
 
@@ -132,6 +141,7 @@ export async function updateDoctor(id, { name, licenseNumber, specialtyId }) {
     licenseNumber,
     specialtyId,
   });
+
   return data;
 }
 
@@ -139,12 +149,14 @@ export async function updateDoctor(id, { name, licenseNumber, specialtyId }) {
 export const getDoctorAvailabilities = async (doctorId) => {
   if (USE_MOCK) {
     await wait(300);
+
     return mockAvailabilities[doctorId] ?? [];
   }
 
   const { data } = await instance.get(
     `/api/doctors/${doctorId}/availabilities`
   );
+
   return data;
 };
 
@@ -155,6 +167,7 @@ export const saveDoctorAvailabilities = async (payload, isUpdate) => {
     await wait(300);
     mockAvailabilities[payload.doctorId] = payload.days.map((d, i) => {
       const english = WEEK_DAYS.find((w) => w.key === d.day)?.english ?? d.day;
+
       return {
         id: `${payload.doctorId}-${i}`,
         day: english[0] + english.slice(1).toLowerCase(),
@@ -162,11 +175,13 @@ export const saveDoctorAvailabilities = async (payload, isUpdate) => {
         endTime: d.endTime,
       };
     });
+
     return;
   }
 
   const { data } = isUpdate
     ? await instance.put('/api/availabilities', payload)
     : await instance.post('/api/availabilities', payload);
+
   return data;
 };

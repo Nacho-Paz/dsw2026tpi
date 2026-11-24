@@ -94,13 +94,11 @@ export default function useAppointments() {
     };
   }, [appliedFilters, pageIndex, reloadKey]);
 
-  // Doctores según la especialidad elegida (el doctor trae specialty.specialtyId)
-  const filteredDoctors = filters.specialtyId
-    ? doctors.filter(
-        (d) =>
-          String(d.specialty?.specialtyId) === String(filters.specialtyId)
-      )
-    : doctors;
+  const filteredDoctors = doctors.filter((d) => {
+    if (!filters.specialtyId) return true;
+
+    return String(d.specialty?.specialtyId) === String(filters.specialtyId);
+  });
 
   const changeFilter = (field, value) =>
     setFilters((prev) => ({

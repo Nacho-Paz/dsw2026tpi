@@ -25,11 +25,13 @@ export function useDoctors(searchTerm, pageSize = DEFAULT_PAGE_SIZE) {
 
   // Debounce del texto de búsqueda.
   const [debouncedQuery, setDebouncedQuery] = useState(query);
+
   useEffect(() => {
     const timer = setTimeout(
       () => setDebouncedQuery(query),
       query ? SEARCH_DELAY_MS : 0
     );
+
     return () => clearTimeout(timer);
   }, [query]);
 
@@ -50,7 +52,9 @@ export function useDoctors(searchTerm, pageSize = DEFAULT_PAGE_SIZE) {
           page,
           pageSize,
         });
+
         if (ignore) return;
+
         setDoctors(result.data);
         setTotal(result.total);
       } catch (err) {
@@ -61,6 +65,7 @@ export function useDoctors(searchTerm, pageSize = DEFAULT_PAGE_SIZE) {
     };
 
     load();
+
     return () => {
       ignore = true;
     };
@@ -75,6 +80,7 @@ export function useDoctors(searchTerm, pageSize = DEFAULT_PAGE_SIZE) {
       try {
         await deleteDoctor(id);
         setNotice('Doctor eliminado correctamente.');
+
         if (doctors.length === 1 && page > 1) {
           setPage((p) => p - 1); // el cambio de página dispara el refetch
         } else {

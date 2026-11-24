@@ -17,7 +17,9 @@ function mergeWithExisting(existing) {
     const found = existing.find(
       (rule) => String(rule.day).toUpperCase() === english
     );
+
     if (!found) return day;
+
     return {
       ...day,
       active: true,
@@ -42,6 +44,7 @@ export function useDoctorAvailability(doctorId) {
 
   useEffect(() => {
     if (!doctorId) return;
+
     let ignore = false;
 
     const load = async () => {
@@ -49,11 +52,14 @@ export function useDoctorAvailability(doctorId) {
       setError('');
       try {
         const existing = await getDoctorAvailabilities(doctorId);
+
         if (ignore) return;
+
         setHasSchedule(existing.length > 0);
         setDays(mergeWithExisting(existing));
       } catch (err) {
         if (ignore) return;
+
         setError(err.response?.data?.message ?? LOAD_ERROR);
         setHasSchedule(false);
         setDays(buildDefaultDays());
@@ -63,6 +69,7 @@ export function useDoctorAvailability(doctorId) {
     };
 
     load();
+
     return () => {
       ignore = true;
     };
@@ -88,16 +95,19 @@ export function useDoctorAvailability(doctorId) {
     // El back rechaza days vacío (ValidateRequest), tanto en POST como en PUT
     if (activeDays.length === 0) {
       setError('Activá al menos un día de atención.');
+
       return;
     }
 
     const invalid = activeDays.find(
       (d) => !d.startTime || !d.endTime || d.startTime >= d.endTime
     );
+
     if (invalid) {
       setError(
         `El horario de entrada debe ser menor al de salida (${invalid.label}).`
       );
+
       return;
     }
 
