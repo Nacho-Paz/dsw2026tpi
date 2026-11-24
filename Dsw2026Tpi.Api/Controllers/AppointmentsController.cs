@@ -68,7 +68,7 @@ public class AppointmentsController : ControllerBase
         [FromQuery] Guid? specialtyId,
         [FromQuery] Guid? doctorId,
         [FromQuery] long? dni,
-        [FromQuery] string date)
+        [FromQuery] string? date)
     {
         var result = await _appointmentService.SearchAppointmentsAsync(pageSize, pageIndex, specialtyId, doctorId, dni, date);
         return Ok(result);

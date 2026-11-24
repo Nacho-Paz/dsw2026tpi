@@ -173,7 +173,7 @@ public class AppointmentService : IAppointmentService
             a => a.Patient.Dni == dni.ToString() && a.Status == AppointmentStatus.BOOKED
             && (a.AvailabilitySlot.SlotDate.Date > DateTime.Now.Date
             || (a.AvailabilitySlot.SlotDate.Date == DateTime.Now.Date && a.AvailabilitySlot.StartTime >= DateTime.Now.TimeOfDay)),
-            "AvailabilitySlot.AvailabilityRule.Doctor,Patient");
+            "AvailabilitySlot.AvailabilityRule.Doctor", "Patient");
 
         if (activeAppointments == null || !activeAppointments.Any())
         {

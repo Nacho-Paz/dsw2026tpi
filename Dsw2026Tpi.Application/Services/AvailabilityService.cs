@@ -312,7 +312,7 @@ public class AvailabilityService : IAvailabilityService
 
     private async Task<HashSet<DateTime>> LoadHolidaysAsync()
     {
-        string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "feriados.json");
+        string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Sources", "feriados.json");
 
         if (!File.Exists(filePath))
         {

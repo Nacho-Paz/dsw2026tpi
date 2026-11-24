@@ -23,7 +23,10 @@ public class DoctorService : IDoctorService
     public async Task<Pagination<DoctorModel.Response>> GetAll(int pageSize, int pageIndex, string? name = null)
 
     {
-        ValidateDoctorName(name);
+        if (!string.IsNullOrWhiteSpace(name))
+        {
+            ValidateDoctorName(name);
+        }
 
         var doctors = await _persistence.Paginate<Doctor, string>(
         pageSize,
